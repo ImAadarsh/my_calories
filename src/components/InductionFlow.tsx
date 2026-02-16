@@ -95,8 +95,8 @@ export default function InductionFlow({ onComplete }: { onComplete: (calories: n
                         >
                             {step === 1 && (
                                 <div className="space-y-8 text-center flex-1 flex flex-col justify-center">
-                                    <div className="w-20 h-20 bg-blue-50 dark:bg-blue-600/10 text-blue-600 mx-auto rounded-[2rem] flex items-center justify-center mb-4">
-                                        <Sparkles size={32} />
+                                    <div className="w-20 h-20 bg-blue-50 dark:bg-blue-600/10 rounded-[2rem] overflow-hidden flex items-center justify-center mb-4">
+                                        <img src="/logo.png" className="w-full h-full object-cover" alt="Logo" />
                                     </div>
                                     <h2 className="text-4xl font-black font-display tracking-tight text-slate-900 dark:text-white leading-[1.1]">What is your sex?</h2>
                                     <div className="grid grid-cols-1 gap-4 pt-4">

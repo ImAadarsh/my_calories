@@ -16,6 +16,7 @@ export default function Dashboard() {
   const [stats, setStats] = useState<any[]>([]);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [needsInduction, setNeedsInduction] = useState(false);
+  const [selectedMeal, setSelectedMeal] = useState<any>(null);
 
   useEffect(() => {
     if (session) {
@@ -120,10 +121,10 @@ export default function Dashboard() {
         </div>
 
         {/* Header/Nav */}
-        <nav className="fixed top-0 left-0 right-0 h-20 z-50 flex items-center justify-between px-8 glass dark:glass-dark border-b border-white/20 dark:border-white/5">
+        <nav className="fixed top-0 left-0 right-0 h-[52px] z-50 flex items-center justify-between px-8 bg-white dark:bg-slate-950 border-b border-slate-100 dark:border-white/5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
-              <Utensils size={24} />
+            <div className="w-10 h-10 bg-blue-600 rounded-xl overflow-hidden shadow-lg shadow-blue-600/20">
+              <img src="/logo.png" className="w-full h-full object-cover" alt="Logo" />
             </div>
             <span className="text-xl font-black font-display tracking-tight text-slate-900 dark:text-white">My Calories.</span>
           </div>
@@ -136,7 +137,7 @@ export default function Dashboard() {
         </nav>
 
         {/* Hero Section */}
-        <section className="relative pt-44 pb-20 px-8 flex flex-col items-center">
+        <section className="relative pt-32 pb-20 px-8 flex flex-col items-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -348,28 +349,34 @@ export default function Dashboard() {
   const progress = Math.min((totalCalories / calorieGoal) * 100, 100);
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#f8fafc] dark:bg-slate-950 pb-32">
+    <div className="flex flex-col min-h-screen bg-[#f8fafc] dark:bg-slate-950 pb-[100px]">
       {/* Navbar Upper */}
-      <header className="p-6 flex items-center justify-between sticky top-0 z-40 glass dark:glass-dark transition-all">
+      <header className="py-1.5 px-6 flex items-center justify-between sticky top-0 z-40 bg-white dark:bg-slate-950 border-b border-slate-100 dark:border-white/5 transition-all">
         <div className="flex items-center gap-4">
-          <div className="relative">
-            <img src={session.user?.image || ""} className="w-12 h-12 rounded-2xl border-2 border-white/50 shadow-xl" alt="Profile" />
-            <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white" />
-          </div>
+          <button
+            onClick={() => setActiveTab('profile')}
+            className="relative cursor-pointer hover:scale-105 transition-transform active:scale-95"
+          >
+            <img src={session.user?.image || ""} className="w-10 h-10 rounded-2xl border-2 border-slate-100 dark:border-white/10 shadow-sm" alt="Profile" />
+            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-slate-950" />
+          </button>
           <div>
-            <h2 className="text-slate-900 dark:text-white font-black text-lg font-display">Dashboard</h2>
+            <div className="flex items-center gap-2">
+              <img src="/logo.png" className="w-4 h-4 rounded-md" alt="Logo" />
+              <h2 className="text-slate-900 dark:text-white font-black text-base font-display">Dashboard</h2>
+            </div>
             <div className="flex items-center gap-1.5">
-              <Activity size={12} className="text-green-500" />
-              <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest tracking-[0.2em]">Connected Live</p>
+              <Activity size={10} className="text-green-500" />
+              <p className="text-[8px] text-slate-400 font-black uppercase tracking-widest tracking-[0.2em]">Connected Live</p>
             </div>
           </div>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => setNeedsInduction(true)} className="p-3 bg-white dark:bg-white/5 text-slate-600 dark:text-slate-400 rounded-2xl border border-slate-100 dark:border-white/10 hover:bg-slate-50 transition-all">
-            <Target size={20} />
+          <button onClick={() => setNeedsInduction(true)} className="p-2.5 bg-white dark:bg-white/5 text-slate-600 dark:text-slate-400 rounded-2xl border border-slate-100 dark:border-white/10 hover:bg-slate-50 transition-all">
+            <Target size={18} />
           </button>
-          <button onClick={() => signOut()} className="p-3 bg-red-50 text-red-500 rounded-2xl hover:bg-red-100 transition-all">
-            <LogOut size={20} />
+          <button onClick={() => signOut()} className="p-2.5 bg-red-50 text-red-500 rounded-2xl hover:bg-red-100 transition-all">
+            <LogOut size={18} />
           </button>
         </div>
       </header>
@@ -454,8 +461,9 @@ export default function Dashboard() {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: i * 0.1 }}
+                        onClick={() => setSelectedMeal(meal)}
                         key={i}
-                        className="flex gap-5 p-6 bg-white rounded-[2.5rem] items-center border border-slate-100 shadow-sm hover:shadow-xl hover:scale-[1.01] transition-all group"
+                        className="flex gap-5 p-6 bg-white rounded-[2.5rem] items-center border border-slate-100 shadow-sm hover:shadow-xl hover:scale-[1.01] transition-all group cursor-pointer"
                       >
                         <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 font-black group-hover:bg-blue-600 group-hover:text-white transition-all">
                           {meal.calories}
@@ -611,25 +619,25 @@ export default function Dashboard() {
       </main>
 
       {/* Tab Bar Bottom */}
-      <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto h-24 glass dark:glass-dark border-t border-slate-100 dark:border-white/5 px-10 flex items-center justify-between z-50">
+      <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto h-[52px] bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-white/5 px-10 flex items-center justify-between z-50">
         <button
           onClick={() => setActiveTab('daily')}
           className={`relative p-3 transition-all ${activeTab === 'daily' ? 'text-blue-600' : 'text-slate-400'}`}
         >
-          <Utensils size={24} />
-          {activeTab === 'daily' && <motion.div layoutId="tab-active" className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-blue-600 rounded-full" />}
+          <Utensils size={22} />
+          {activeTab === 'daily' && <motion.div layoutId="tab-active" className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-blue-600 rounded-full" />}
         </button>
 
         {/* Integrated Floating Action Button */}
-        <div className="relative -top-10">
+        <div className="relative">
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={() => setIsLogging(true)}
-            className="w-16 h-16 bg-blue-600 text-white rounded-[1.5rem] shadow-[0_20px_40px_rgba(59,130,246,0.4)] flex items-center justify-center transition-all group relative overflow-hidden"
+            className="w-9 h-9 bg-blue-600 text-white rounded-xl shadow-lg flex items-center justify-center transition-all group relative overflow-hidden"
           >
-            <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-[1.5rem]" />
-            <Plus size={32} className="group-hover:rotate-90 transition-transform duration-500" />
+            <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl" />
+            <Plus size={20} className="group-hover:rotate-90 transition-transform duration-500" />
           </motion.button>
         </div>
 
@@ -637,8 +645,8 @@ export default function Dashboard() {
           onClick={() => setActiveTab('stats')}
           className={`relative p-3 transition-all ${activeTab === 'stats' ? 'text-blue-600' : 'text-slate-400'}`}
         >
-          <BarChart3 size={24} />
-          {activeTab === 'stats' && <motion.div layoutId="tab-active" className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-blue-600 rounded-full" />}
+          <BarChart3 size={22} />
+          {activeTab === 'stats' && <motion.div layoutId="tab-active" className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-blue-600 rounded-full" />}
         </button>
       </nav>
 
@@ -655,6 +663,54 @@ export default function Dashboard() {
       <AnimatePresence>
         {needsInduction && (
           <InductionFlow onComplete={handleInductionComplete} />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {selectedMeal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex items-end justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
+            onClick={() => setSelectedMeal(null)}
+          >
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="w-full max-w-md bg-white dark:bg-slate-950 rounded-[3rem] p-8 shadow-2xl relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="w-12 h-1 bg-slate-200 dark:bg-white/10 rounded-full mx-auto mb-8" />
+
+              <div className="space-y-6">
+                <div className="flex justify-between items-start">
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">Meal Detail</p>
+                    <h3 className="text-3xl font-black text-slate-900 dark:text-white font-display leading-tight">{selectedMeal.food_name}</h3>
+                  </div>
+                  <div className="px-5 py-3 bg-blue-50 dark:bg-blue-600/10 rounded-2xl">
+                    <p className="text-2xl font-black text-blue-600 dark:text-blue-400">{selectedMeal.calories}<span className="text-xs ml-1">kcal</span></p>
+                  </div>
+                </div>
+
+                <div className="p-6 bg-slate-50 dark:bg-white/5 rounded-[2rem] border border-slate-100 dark:border-white/5">
+                  <p className="text-xs font-bold text-slate-500 dark:text-slate-400 leading-relaxed italic">
+                    "{selectedMeal.description}"
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => setSelectedMeal(null)}
+                  className="w-full py-5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black rounded-2xl hover:scale-[1.02] active:scale-95 transition-all shadow-xl"
+                >
+                  Done
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
