@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, ChevronLeft, Check, Calculator, Info } from "lucide-react";
+import { ChevronRight, ChevronLeft, Check, Calculator, Info, Sparkles, Target, Zap } from "lucide-react";
 
 interface Metrics {
     sex: 'male' | 'female';
@@ -29,13 +29,9 @@ export default function InductionFlow({ onComplete }: { onComplete: (calories: n
     const totalSteps = 6;
 
     const calculateCalories = () => {
-        // Mifflin-St Jeor Equation
         let bmr = (10 * metrics.weight) + (6.25 * metrics.height) - (5 * metrics.age);
-        if (metrics.sex === 'male') {
-            bmr += 5;
-        } else {
-            bmr -= 161;
-        }
+        if (metrics.sex === 'male') bmr += 5;
+        else bmr -= 161;
 
         const activityMultipliers = {
             sedentary: 1.2,
@@ -46,8 +42,6 @@ export default function InductionFlow({ onComplete }: { onComplete: (calories: n
         };
 
         const tdee = bmr * activityMultipliers[metrics.activity_level];
-
-        // Adjust based on goal
         if (metrics.goal === 'lose') return Math.round(tdee - 500);
         if (metrics.goal === 'gain' || metrics.goal === 'muscle') return Math.round(tdee + 500);
         return Math.round(tdee);
@@ -66,184 +60,220 @@ export default function InductionFlow({ onComplete }: { onComplete: (calories: n
     };
 
     return (
-        <div className="fixed inset-0 bg-white z-50 flex flex-col p-8">
-            {/* Progress Bar */}
-            <div className="w-full h-1 bg-slate-100 rounded-full mb-12">
-                <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${(step / totalSteps) * 100}%` }}
-                    className="h-full bg-blue-600 rounded-full"
-                />
-            </div>
+        <div className="fixed inset-0 bg-slate-950/20 backdrop-blur-3xl z-50 flex flex-col items-center justify-center p-4">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-transparent to-purple-600/10" />
 
-            <div className="flex-1 overflow-y-auto">
-                <AnimatePresence mode="wait">
-                    <motion.div
-                        key={step}
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        className="space-y-8"
-                    >
-                        {step === 1 && (
-                            <div className="space-y-6">
-                                <h2 className="text-3xl font-black">What is your sex?</h2>
-                                <div className="grid grid-cols-2 gap-4">
-                                    {['male', 'female'].map((s) => (
-                                        <button
-                                            key={s}
-                                            onClick={() => { setMetrics({ ...metrics, sex: s as any }); nextStep(); }}
-                                            className={`py-8 rounded-3xl border-2 transition-all font-bold capitalize ${metrics.sex === s ? 'border-blue-600 bg-blue-50 text-blue-600' : 'border-slate-100 hover:border-slate-200'}`}
-                                        >
-                                            {s}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
+            <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                className="w-full max-w-md bg-white dark:bg-slate-900 rounded-[3.5rem] p-10 shadow-[0_40px_100px_rgba(0,0,0,0.1)] relative overflow-hidden flex flex-col min-h-[600px] border border-white/50 dark:border-white/10"
+            >
+                {/* Background Decor */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600 opacity-5 rounded-full blur-[60px] translate-x-1/2 -translate-y-1/2" />
 
-                        {step === 2 && (
-                            <div className="space-y-6">
-                                <h2 className="text-3xl font-black">Tell us about you.</h2>
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1">Age (Years)</label>
-                                        <input
-                                            type="number"
-                                            value={metrics.age}
-                                            onChange={(e) => setMetrics({ ...metrics, age: parseInt(e.target.value) })}
-                                            className="w-full p-6 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-blue-600 focus:bg-white outline-none font-bold text-xl"
-                                        />
+                {/* Progress Bar */}
+                <div className="w-full h-2 bg-slate-100 dark:bg-white/5 rounded-full mb-12 flex gap-1 p-0.5">
+                    {Array.from({ length: totalSteps }).map((_, i) => (
+                        <div key={i} className="flex-1 h-full rounded-full overflow-hidden bg-slate-100 dark:bg-white/5">
+                            <motion.div
+                                initial={false}
+                                animate={{ width: i + 1 <= step ? "100%" : "0%" }}
+                                className="h-full bg-blue-600"
+                            />
+                        </div>
+                    ))}
+                </div>
+
+                <div className="flex-1 relative flex flex-col pt-2">
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={step}
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -20 }}
+                            className="space-y-10 flex-1 flex flex-col"
+                        >
+                            {step === 1 && (
+                                <div className="space-y-8 text-center flex-1 flex flex-col justify-center">
+                                    <div className="w-20 h-20 bg-blue-50 dark:bg-blue-600/10 text-blue-600 mx-auto rounded-[2rem] flex items-center justify-center mb-4">
+                                        <Sparkles size={32} />
                                     </div>
-                                    <div>
-                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1">Height (cm)</label>
-                                        <input
-                                            type="number"
-                                            value={metrics.height}
-                                            onChange={(e) => setMetrics({ ...metrics, height: parseInt(e.target.value) })}
-                                            className="w-full p-6 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-blue-600 focus:bg-white outline-none font-bold text-xl"
-                                        />
+                                    <h2 className="text-4xl font-black font-display tracking-tight text-slate-900 dark:text-white leading-[1.1]">What is your sex?</h2>
+                                    <div className="grid grid-cols-1 gap-4 pt-4">
+                                        {['male', 'female'].map((s) => (
+                                            <button
+                                                key={s}
+                                                onClick={() => { setMetrics({ ...metrics, sex: s as any }); nextStep(); }}
+                                                className={`py-8 px-8 rounded-[2rem] border-2 transition-all font-black text-xl flex items-center justify-between group ${metrics.sex === s ? 'border-blue-600 bg-blue-600 text-white shadow-xl shadow-blue-600/20' : 'border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 text-slate-400 hover:border-slate-200'}`}
+                                            >
+                                                <span className="capitalize">{s}</span>
+                                                <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${metrics.sex === s ? 'border-white bg-white/20' : 'border-slate-200'}`}>
+                                                    {metrics.sex === s && <Check size={16} />}
+                                                </div>
+                                            </button>
+                                        ))}
                                     </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
 
-                        {step === 3 && (
-                            <div className="space-y-6">
-                                <h2 className="text-3xl font-black">Current Weight.</h2>
-                                <p className="text-slate-500">It's okay to guess. You can always adjust this later.</p>
-                                <div className="relative">
-                                    <input
-                                        type="number"
-                                        value={metrics.weight}
-                                        onChange={(e) => setMetrics({ ...metrics, weight: parseFloat(e.target.value) })}
-                                        className="w-full p-8 bg-slate-50 rounded-[2.5rem] border-2 border-transparent focus:border-blue-600 focus:bg-white outline-none font-black text-5xl text-center"
-                                    />
-                                    <span className="absolute right-8 top-1/2 -translate-y-1/2 font-bold text-slate-300">kg</span>
+                            {step === 2 && (
+                                <div className="space-y-8 flex-1 flex flex-col justify-center">
+                                    <div className="text-center space-y-4 mb-2">
+                                        <h2 className="text-4xl font-black font-display tracking-tight text-slate-900 dark:text-white leading-[1.1]">Personal Profile</h2>
+                                        <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Help us calculate your BMR</p>
+                                    </div>
+                                    <div className="space-y-6">
+                                        <div className="group">
+                                            <div className="flex justify-between items-center mb-2 px-1">
+                                                <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Age (Years)</label>
+                                                <span className="text-blue-500 font-black text-xs">{metrics.age} yr</span>
+                                            </div>
+                                            <input
+                                                type="number"
+                                                value={metrics.age}
+                                                onChange={(e) => setMetrics({ ...metrics, age: parseInt(e.target.value) })}
+                                                className="w-full p-6 bg-slate-50 dark:bg-white/5 rounded-[2rem] border-2 border-transparent focus:border-blue-600 focus:bg-white outline-none font-black text-2xl transition-all shadow-inner"
+                                            />
+                                        </div>
+                                        <div>
+                                            <div className="flex justify-between items-center mb-2 px-1">
+                                                <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Height (cm)</label>
+                                                <span className="text-blue-500 font-black text-xs">{metrics.height} cm</span>
+                                            </div>
+                                            <input
+                                                type="number"
+                                                value={metrics.height}
+                                                onChange={(e) => setMetrics({ ...metrics, height: parseInt(e.target.value) })}
+                                                className="w-full p-6 bg-slate-50 dark:bg-white/5 rounded-[2rem] border-2 border-transparent focus:border-blue-600 focus:bg-white outline-none font-black text-2xl transition-all shadow-inner"
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
 
-                        {step === 4 && (
-                            <div className="space-y-6">
-                                <h2 className="text-3xl font-black">Daily Activity.</h2>
-                                <div className="space-y-3">
-                                    {[
-                                        { id: 'sedentary', label: 'Sedentary', desc: 'Little or no exercise' },
-                                        { id: 'lightly_active', label: 'Lightly Active', desc: '1-3 days / week' },
-                                        { id: 'moderately_active', label: 'Moderately Active', desc: '3-5 days / week' },
-                                        { id: 'very_active', label: 'Very Active', desc: '6-7 days / week' },
-                                        { id: 'extra_active', label: 'Extra Active', desc: 'Professional athlete' }
-                                    ].map((act) => (
-                                        <button
-                                            key={act.id}
-                                            onClick={() => { setMetrics({ ...metrics, activity_level: act.id as any }); nextStep(); }}
-                                            className={`w-full p-6 rounded-2xl border-2 text-left transition-all ${metrics.activity_level === act.id ? 'border-blue-600 bg-blue-50' : 'border-slate-100'}`}
-                                        >
-                                            <p className="font-bold text-lg">{act.label}</p>
-                                            <p className="text-sm text-slate-500">{act.desc}</p>
-                                        </button>
-                                    ))}
+                            {step === 3 && (
+                                <div className="space-y-8 flex-1 flex flex-col justify-center text-center">
+                                    <div className="space-y-3">
+                                        <h2 className="text-4xl font-black font-display tracking-tight text-slate-900 dark:text-white leading-[1.1]">Current Weight</h2>
+                                        <p className="text-slate-400 font-medium">Your starting point today.</p>
+                                    </div>
+                                    <div className="relative pt-6">
+                                        <div className="absolute inset-0 bg-blue-500/5 blur-[50px] rounded-full" />
+                                        <input
+                                            type="number"
+                                            value={metrics.weight}
+                                            onChange={(e) => setMetrics({ ...metrics, weight: parseFloat(e.target.value) })}
+                                            className="w-full p-12 bg-white dark:bg-white/5 rounded-[3.5rem] border-2 border-slate-100 dark:border-white/10 focus:border-blue-600 outline-none font-black text-7xl text-center relative z-10 shadow-2xl transition-all"
+                                        />
+                                        <span className="absolute right-12 top-1/2 translate-y-2 font-black text-slate-200 dark:text-white/10 text-2xl z-20">kg</span>
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
 
-                        {step === 5 && (
-                            <div className="space-y-6">
-                                <h2 className="text-3xl font-black">What’s your main goal?</h2>
-                                <div className="space-y-3">
-                                    {[
-                                        { id: 'lose', label: 'Lose weight', icon: '📉' },
-                                        { id: 'maintain', label: 'Maintain weight', icon: '👀' },
-                                        { id: 'gain', label: 'Gain weight', icon: '📈' },
-                                        { id: 'muscle', label: 'Build muscle', icon: '💪' }
-                                    ].map((g) => (
-                                        <button
-                                            key={g.id}
-                                            onClick={() => { setMetrics({ ...metrics, goal: g.id as any }); nextStep(); }}
-                                            className={`w-full p-6 rounded-2xl border-2 text-left flex items-center gap-4 transition-all ${metrics.goal === g.id ? 'border-blue-600 bg-blue-50' : 'border-slate-100'}`}
-                                        >
-                                            <span className="text-2xl">{g.icon}</span>
-                                            <p className="font-bold text-lg">{g.label}</p>
-                                        </button>
-                                    ))}
+                            {step === 4 && (
+                                <div className="space-y-8 flex-1">
+                                    <h2 className="text-3xl font-black font-display text-slate-900 dark:text-white leading-tight">Daily Activity Level</h2>
+                                    <div className="space-y-3">
+                                        {[
+                                            { id: 'sedentary', label: 'Sedentary', desc: 'Minimal movement' },
+                                            { id: 'lightly_active', label: 'Light', desc: '1-3 days exercise' },
+                                            { id: 'moderately_active', label: 'Moderate', desc: '3-5 days workout' },
+                                            { id: 'very_active', label: 'Very Active', desc: '6-7 days extreme' }
+                                        ].map((act) => (
+                                            <button
+                                                key={act.id}
+                                                onClick={() => { setMetrics({ ...metrics, activity_level: act.id as any }); nextStep(); }}
+                                                className={`w-full p-6 rounded-[2rem] border-2 text-left transition-all relative overflow-hidden group ${metrics.activity_level === act.id ? 'border-blue-600 bg-blue-50 dark:bg-blue-600/10' : 'border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5'}`}
+                                            >
+                                                <div className="relative z-10 flex justify-between items-center">
+                                                    <div>
+                                                        <p className={`font-black text-lg transition-colors ${metrics.activity_level === act.id ? 'text-blue-600' : 'text-slate-900 dark:text-white'}`}>{act.label}</p>
+                                                        <p className="text-xs text-slate-400 font-bold">{act.desc}</p>
+                                                    </div>
+                                                    {metrics.activity_level === act.id && <Zap size={20} className="text-blue-600 fill-blue-600" />}
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
 
-                        {step === 6 && (
-                            <div className="space-y-8">
-                                <h2 className="text-3xl font-black text-center">Your personalized plan.</h2>
-                                <div className="bg-slate-900 p-8 rounded-[3rem] text-white text-center space-y-4">
-                                    <Calculator size={48} className="mx-auto text-blue-500 mb-4" />
-                                    <p className="text-slate-400 font-bold uppercase tracking-widest text-sm">Target Daily Intake</p>
-                                    <h3 className="text-6xl font-black">{calculateCalories()} <span className="text-2xl text-slate-500">kcal</span></h3>
-                                    <p className="text-slate-500 leading-relaxed px-4 text-sm mt-4">
-                                        Based on your Mifflin-St Jeor calculation, staying within this range will help you {metrics.goal} sustainably.
-                                    </p>
+                            {step === 5 && (
+                                <div className="space-y-8 flex-1">
+                                    <h2 className="text-3xl font-black font-display text-slate-900 dark:text-white">What's the goal?</h2>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {[
+                                            { id: 'lose', label: 'Lose', icon: '📉' },
+                                            { id: 'maintain', label: 'Maintain', icon: '👀' },
+                                            { id: 'gain', label: 'Gain', icon: '📈' },
+                                            { id: 'muscle', label: 'Muscle', icon: '💪' }
+                                        ].map((g) => (
+                                            <button
+                                                key={g.id}
+                                                onClick={() => { setMetrics({ ...metrics, goal: g.id as any }); nextStep(); }}
+                                                className={`p-8 rounded-[2.5rem] border-2 text-center flex flex-col items-center gap-4 transition-all ${metrics.goal === g.id ? 'border-blue-600 bg-blue-50 dark:bg-blue-600/10' : 'border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5'}`}
+                                            >
+                                                <span className="text-4xl grayscale group-hover:grayscale-0 transition-all">{g.icon}</span>
+                                                <p className={`font-black uppercase tracking-widest text-[10px] ${metrics.goal === g.id ? 'text-blue-600' : 'text-slate-400'}`}>{g.label}</p>
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
+                            )}
 
-                                <div className="bg-blue-50 p-6 rounded-3xl flex items-start gap-4">
-                                    <Info className="text-blue-600 shrink-0" size={24} />
-                                    <p className="text-blue-900 text-sm">
-                                        Goal Weight: <strong>{metrics.target_weight}kg</strong>. We'll track your progress weekly.
-                                    </p>
-                                </div>
+                            {step === 6 && (
+                                <div className="space-y-10 flex-1 flex flex-col justify-center">
+                                    <div className="text-center">
+                                        <h2 className="text-4xl font-black font-display text-slate-900 dark:text-white leading-[1.1]">Your Master Plan</h2>
+                                    </div>
+                                    <div className="bg-slate-900 rounded-[3.5rem] p-10 text-white text-center space-y-4 relative overflow-hidden shadow-2xl">
+                                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600 opacity-20 rounded-full blur-[60px]" />
+                                        <p className="text-white/40 font-black uppercase tracking-[0.2em] text-[10px]">Optimal Daily Intake</p>
+                                        <div className="flex items-baseline justify-center gap-2">
+                                            <h3 className="text-7xl font-black font-display tracking-tighter">{calculateCalories()}</h3>
+                                            <span className="text-white/30 font-bold text-xl uppercase italic">kcal</span>
+                                        </div>
+                                        <p className="text-white/40 text-xs font-medium px-4 leading-relaxed">
+                                            Customized logic based on Mifflin-St Jeor & {metrics.goal} goal.
+                                        </p>
+                                    </div>
 
-                                {metrics.goal === 'lose' && (
                                     <div className="space-y-4">
-                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-widest pl-1">Target Weight (kg)</label>
+                                        <div className="flex justify-between items-center px-1">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Target Weight (kg)</label>
+                                            <Target size={14} className="text-blue-500" />
+                                        </div>
                                         <input
                                             type="number"
                                             value={metrics.target_weight}
                                             onChange={(e) => setMetrics({ ...metrics, target_weight: parseFloat(e.target.value) })}
-                                            className="w-full p-6 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-blue-600 outline-none font-bold text-xl"
+                                            className="w-full p-6 bg-slate-50 dark:bg-white/5 rounded-[2rem] border-2 border-slate-100 dark:border-white/10 focus:border-blue-600 outline-none font-black text-2xl transition-all"
                                         />
                                     </div>
-                                )}
-                            </div>
-                        )}
-                    </motion.div>
-                </AnimatePresence>
-            </div>
+                                </div>
+                            )}
+                        </motion.div>
+                    </AnimatePresence>
+                </div>
 
-            {/* Navigation */}
-            <div className="pt-8 flex gap-4">
-                {step > 1 && (
+                {/* Footer Navigation */}
+                <div className="pt-10 flex gap-4 relative z-10">
+                    {step > 1 && (
+                        <button
+                            onClick={prevStep}
+                            className="p-6 bg-slate-100 dark:bg-white/5 text-slate-900 dark:text-white rounded-[2rem] hover:bg-slate-200 transition-all border border-slate-100 dark:border-white/5"
+                        >
+                            <ChevronLeft size={24} />
+                        </button>
+                    )}
                     <button
-                        onClick={prevStep}
-                        className="p-6 bg-slate-100 text-slate-600 rounded-2xl hover:bg-slate-200 transition-all"
+                        onClick={nextStep}
+                        className="flex-1 py-6 bg-blue-600 text-white font-black rounded-[2rem] shadow-2xl shadow-blue-600/30 hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 text-lg"
                     >
-                        <ChevronLeft size={24} />
+                        {step === totalSteps ? 'Activate Profile' : 'Next Step'} <ChevronRight size={24} />
                     </button>
-                )}
-                <button
-                    onClick={nextStep}
-                    className="flex-1 py-6 bg-blue-600 text-white font-bold rounded-2xl shadow-xl shadow-blue-600/20 hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
-                >
-                    {step === totalSteps ? 'Finish Profile' : 'Continue'} <ChevronRight size={20} />
-                </button>
-            </div>
+                </div>
+            </motion.div>
         </div>
     );
 }

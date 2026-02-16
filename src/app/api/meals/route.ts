@@ -3,6 +3,9 @@ import { getServerSession } from "next-auth/next";
 import { query } from '@/lib/db';
 import { analyzeFoodImage } from '@/lib/gemini';
 import { authOptions } from '@/lib/auth';
+import { formatInTimeZone } from 'date-fns-tz';
+
+const TIMEZONE = 'Asia/Kolkata';
 
 export async function POST(req: Request) {
     const session = await getServerSession(authOptions) as any;
@@ -22,20 +25,17 @@ export async function POST(req: Request) {
         const buffer = Buffer.from(await image.arrayBuffer());
         const analysis = await analyzeFoodImage(buffer, image.type, userDescription);
 
-        // Save to DB
-        // Note: In a real app, you'd upload the image to S3/Cloudinary and save the URL.
-        // For this demo, we'll store a placeholder or base64 (not recommended for production)
-        const imageUrl = "https://via.placeholder.com/400x300?text=" + analysis.food_name;
+        // Get current time in IST
+        const nowIST = formatInTimeZone(new Date(), TIMEZONE, 'yyyy-MM-dd HH:mm:ss');
 
-        const result = await query(
-            "INSERT INTO meals (user_id, food_name, description, calories, image_url, eaten_at) VALUES (?, ?, ?, ?, ?, ?)",
+        await query(
+            "INSERT INTO meals (user_id, food_name, description, calories, eaten_at) VALUES (?, ?, ?, ?, ?)",
             [
                 session.user.id,
                 analysis.food_name,
                 analysis.description,
                 analysis.calories,
-                imageUrl,
-                new Date() // DB will handle current timestamp, but we can be explicit
+                nowIST
             ]
         );
 
@@ -53,16 +53,21 @@ export async function GET(req: Request) {
     }
 
     const { searchParams } = new URL(req.url);
-    const type = searchParams.get('type') || 'daily'; // daily, weekly, monthly
+    const type = searchParams.get('type') || 'daily';
 
     try {
-        let sql = "SELECT * FROM meals WHERE user_id = ?";
-        if (type === 'daily') {
-            sql += " AND DATE(eaten_at) = CURDATE()";
-        }
-        // TODO: Implement weekly/monthly logic using built-in MySQL date functions
+        const todayIST = formatInTimeZone(new Date(), TIMEZONE, 'yyyy-MM-dd');
 
-        const meals = await query(sql, [session.user.id]);
+        let sql = "SELECT * FROM meals WHERE user_id = ?";
+        let params = [session.user.id];
+
+        if (type === 'daily') {
+            // Using +05:30 offset explicitly for robustness in MySQL
+            sql += " AND DATE(CONVERT_TZ(eaten_at, '+00:00', '+05:30')) = ?";
+            params.push(todayIST);
+        }
+
+        const meals = await query(sql, params);
         return NextResponse.json(meals);
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 });
