@@ -66,13 +66,13 @@ export default function InductionFlow({ onComplete }: { onComplete: (calories: n
             <motion.div
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                className="w-full max-w-md bg-white dark:bg-slate-900 rounded-[3.5rem] p-10 shadow-[0_40px_100px_rgba(0,0,0,0.1)] relative overflow-hidden flex flex-col min-h-[600px] border border-white/50 dark:border-white/10"
+                className="w-full max-w-md bg-white dark:bg-slate-900 rounded-[3rem] p-8 shadow-[0_40px_100px_rgba(0,0,0,0.1)] relative flex flex-col max-h-[90vh] border border-white/50 dark:border-white/10"
             >
                 {/* Background Decor */}
                 <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600 opacity-5 rounded-full blur-[60px] translate-x-1/2 -translate-y-1/2" />
 
                 {/* Progress Bar */}
-                <div className="w-full h-2 bg-slate-100 dark:bg-white/5 rounded-full mb-12 flex gap-1 p-0.5">
+                <div className="w-full h-1.5 bg-slate-100 dark:bg-white/5 rounded-full mb-6 flex gap-1 p-0.5">
                     {Array.from({ length: totalSteps }).map((_, i) => (
                         <div key={i} className="flex-1 h-full rounded-full overflow-hidden bg-slate-100 dark:bg-white/5">
                             <motion.div
@@ -84,7 +84,7 @@ export default function InductionFlow({ onComplete }: { onComplete: (calories: n
                     ))}
                 </div>
 
-                <div className="flex-1 relative flex flex-col pt-2">
+                <div className="flex-1 relative flex flex-col overflow-y-auto pr-1">
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={step}
@@ -95,16 +95,16 @@ export default function InductionFlow({ onComplete }: { onComplete: (calories: n
                         >
                             {step === 1 && (
                                 <div className="space-y-8 text-center flex-1 flex flex-col justify-center">
-                                    <div className="w-20 h-20 bg-blue-50 dark:bg-blue-600/10 rounded-[2rem] overflow-hidden flex items-center justify-center mb-4">
+                                    <div className="w-16 h-16 bg-blue-50 dark:bg-blue-600/10 rounded-2xl overflow-hidden flex items-center justify-center mb-4 mx-auto">
                                         <img src="/logo.png" className="w-full h-full object-cover" alt="Logo" />
                                     </div>
-                                    <h2 className="text-4xl font-black font-display tracking-tight text-slate-900 dark:text-white leading-[1.1]">What is your sex?</h2>
-                                    <div className="grid grid-cols-1 gap-4 pt-4">
+                                    <h2 className="text-2xl font-black font-display tracking-tight text-slate-900 dark:text-white leading-tight">What is your sex?</h2>
+                                    <div className="grid grid-cols-1 gap-3 pt-4">
                                         {['male', 'female'].map((s) => (
                                             <button
                                                 key={s}
                                                 onClick={() => { setMetrics({ ...metrics, sex: s as any }); nextStep(); }}
-                                                className={`py-8 px-8 rounded-[2rem] border-2 transition-all font-black text-xl flex items-center justify-between group ${metrics.sex === s ? 'border-blue-600 bg-blue-600 text-white shadow-xl shadow-blue-600/20' : 'border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 text-slate-400 hover:border-slate-200'}`}
+                                                className={`py-6 px-6 rounded-2xl border-2 transition-all font-black text-lg flex items-center justify-between group ${metrics.sex === s ? 'border-blue-600 bg-blue-600 text-white shadow-xl shadow-blue-600/20' : 'border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 text-slate-400 hover:border-slate-200'}`}
                                             >
                                                 <span className="capitalize">{s}</span>
                                                 <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${metrics.sex === s ? 'border-white bg-white/20' : 'border-slate-200'}`}>
@@ -118,9 +118,9 @@ export default function InductionFlow({ onComplete }: { onComplete: (calories: n
 
                             {step === 2 && (
                                 <div className="space-y-8 flex-1 flex flex-col justify-center">
-                                    <div className="text-center space-y-4 mb-2">
-                                        <h2 className="text-4xl font-black font-display tracking-tight text-slate-900 dark:text-white leading-[1.1]">Personal Profile</h2>
-                                        <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Help us calculate your BMR</p>
+                                    <div className="text-center space-y-2 mb-2">
+                                        <h2 className="text-2xl font-black font-display tracking-tight text-slate-900 dark:text-white leading-tight">Personal Profile</h2>
+                                        <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Calculate your BMR</p>
                                     </div>
                                     <div className="space-y-6">
                                         <div className="group">
@@ -132,7 +132,7 @@ export default function InductionFlow({ onComplete }: { onComplete: (calories: n
                                                 type="number"
                                                 value={metrics.age}
                                                 onChange={(e) => setMetrics({ ...metrics, age: parseInt(e.target.value) })}
-                                                className="w-full p-6 bg-slate-50 dark:bg-white/5 rounded-[2rem] border-2 border-transparent focus:border-blue-600 focus:bg-white outline-none font-black text-2xl transition-all shadow-inner"
+                                                className="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border-2 border-transparent focus:border-blue-600 focus:bg-white outline-none font-black text-xl transition-all shadow-inner"
                                             />
                                         </div>
                                         <div>
@@ -144,7 +144,7 @@ export default function InductionFlow({ onComplete }: { onComplete: (calories: n
                                                 type="number"
                                                 value={metrics.height}
                                                 onChange={(e) => setMetrics({ ...metrics, height: parseInt(e.target.value) })}
-                                                className="w-full p-6 bg-slate-50 dark:bg-white/5 rounded-[2rem] border-2 border-transparent focus:border-blue-600 focus:bg-white outline-none font-black text-2xl transition-all shadow-inner"
+                                                className="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border-2 border-transparent focus:border-blue-600 focus:bg-white outline-none font-black text-xl transition-all shadow-inner"
                                             />
                                         </div>
                                     </div>
@@ -153,9 +153,9 @@ export default function InductionFlow({ onComplete }: { onComplete: (calories: n
 
                             {step === 3 && (
                                 <div className="space-y-8 flex-1 flex flex-col justify-center text-center">
-                                    <div className="space-y-3">
-                                        <h2 className="text-4xl font-black font-display tracking-tight text-slate-900 dark:text-white leading-[1.1]">Current Weight</h2>
-                                        <p className="text-slate-400 font-medium">Your starting point today.</p>
+                                    <div className="space-y-2">
+                                        <h2 className="text-2xl font-black font-display tracking-tight text-slate-900 dark:text-white leading-tight">Current Weight</h2>
+                                        <p className="text-slate-400 text-sm font-medium">Your starting point today.</p>
                                     </div>
                                     <div className="relative pt-6">
                                         <div className="absolute inset-0 bg-blue-500/5 blur-[50px] rounded-full" />
@@ -163,16 +163,16 @@ export default function InductionFlow({ onComplete }: { onComplete: (calories: n
                                             type="number"
                                             value={metrics.weight}
                                             onChange={(e) => setMetrics({ ...metrics, weight: parseFloat(e.target.value) })}
-                                            className="w-full p-12 bg-white dark:bg-white/5 rounded-[3.5rem] border-2 border-slate-100 dark:border-white/10 focus:border-blue-600 outline-none font-black text-7xl text-center relative z-10 shadow-2xl transition-all"
+                                            className="w-full p-8 bg-white dark:bg-white/5 rounded-[2.5rem] border-2 border-slate-100 dark:border-white/10 focus:border-blue-600 outline-none font-black text-5xl text-center relative z-10 shadow-2xl transition-all"
                                         />
-                                        <span className="absolute right-12 top-1/2 translate-y-2 font-black text-slate-200 dark:text-white/10 text-2xl z-20">kg</span>
+                                        <span className="absolute right-8 top-1/2 translate-y-2 font-black text-slate-200 dark:text-white/10 text-xl z-20">kg</span>
                                     </div>
                                 </div>
                             )}
 
                             {step === 4 && (
                                 <div className="space-y-8 flex-1">
-                                    <h2 className="text-3xl font-black font-display text-slate-900 dark:text-white leading-tight">Daily Activity Level</h2>
+                                    <h2 className="text-2xl font-black font-display text-slate-900 dark:text-white leading-tight">Activity Level</h2>
                                     <div className="space-y-3">
                                         {[
                                             { id: 'sedentary', label: 'Sedentary', desc: 'Minimal movement' },
@@ -183,7 +183,7 @@ export default function InductionFlow({ onComplete }: { onComplete: (calories: n
                                             <button
                                                 key={act.id}
                                                 onClick={() => { setMetrics({ ...metrics, activity_level: act.id as any }); nextStep(); }}
-                                                className={`w-full p-6 rounded-[2rem] border-2 text-left transition-all relative overflow-hidden group ${metrics.activity_level === act.id ? 'border-blue-600 bg-blue-50 dark:bg-blue-600/10' : 'border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5'}`}
+                                                className={`w-full p-5 rounded-2xl border-2 text-left transition-all relative overflow-hidden group ${metrics.activity_level === act.id ? 'border-blue-600 bg-blue-50 dark:bg-blue-600/10' : 'border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5'}`}
                                             >
                                                 <div className="relative z-10 flex justify-between items-center">
                                                     <div>
@@ -200,7 +200,7 @@ export default function InductionFlow({ onComplete }: { onComplete: (calories: n
 
                             {step === 5 && (
                                 <div className="space-y-8 flex-1">
-                                    <h2 className="text-3xl font-black font-display text-slate-900 dark:text-white">What's the goal?</h2>
+                                    <h2 className="text-2xl font-black font-display text-slate-900 dark:text-white">What's the goal?</h2>
                                     <div className="grid grid-cols-2 gap-4">
                                         {[
                                             { id: 'lose', label: 'Lose', icon: '📉' },
@@ -211,10 +211,10 @@ export default function InductionFlow({ onComplete }: { onComplete: (calories: n
                                             <button
                                                 key={g.id}
                                                 onClick={() => { setMetrics({ ...metrics, goal: g.id as any }); nextStep(); }}
-                                                className={`p-8 rounded-[2.5rem] border-2 text-center flex flex-col items-center gap-4 transition-all ${metrics.goal === g.id ? 'border-blue-600 bg-blue-50 dark:bg-blue-600/10' : 'border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5'}`}
+                                                className={`p-6 rounded-[2rem] border-2 text-center flex flex-col items-center gap-2 transition-all ${metrics.goal === g.id ? 'border-blue-600 bg-blue-50 dark:bg-blue-600/10' : 'border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5'}`}
                                             >
-                                                <span className="text-4xl grayscale group-hover:grayscale-0 transition-all">{g.icon}</span>
-                                                <p className={`font-black uppercase tracking-widest text-[10px] ${metrics.goal === g.id ? 'text-blue-600' : 'text-slate-400'}`}>{g.label}</p>
+                                                <span className="text-3xl grayscale group-hover:grayscale-0 transition-all">{g.icon}</span>
+                                                <p className={`font-black uppercase tracking-widest text-[9px] ${metrics.goal === g.id ? 'text-blue-600' : 'text-slate-400'}`}>{g.label}</p>
                                             </button>
                                         ))}
                                     </div>
@@ -224,14 +224,14 @@ export default function InductionFlow({ onComplete }: { onComplete: (calories: n
                             {step === 6 && (
                                 <div className="space-y-10 flex-1 flex flex-col justify-center">
                                     <div className="text-center">
-                                        <h2 className="text-4xl font-black font-display text-slate-900 dark:text-white leading-[1.1]">Your Master Plan</h2>
+                                        <h2 className="text-2xl font-black font-display text-slate-900 dark:text-white leading-tight">Your Master Plan</h2>
                                     </div>
-                                    <div className="bg-slate-900 rounded-[3.5rem] p-10 text-white text-center space-y-4 relative overflow-hidden shadow-2xl">
+                                    <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white text-center space-y-2 relative overflow-hidden shadow-2xl">
                                         <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600 opacity-20 rounded-full blur-[60px]" />
                                         <p className="text-white/40 font-black uppercase tracking-[0.2em] text-[10px]">Optimal Daily Intake</p>
                                         <div className="flex items-baseline justify-center gap-2">
-                                            <h3 className="text-7xl font-black font-display tracking-tighter">{calculateCalories()}</h3>
-                                            <span className="text-white/30 font-bold text-xl uppercase italic">kcal</span>
+                                            <h3 className="text-6xl font-black font-display tracking-tighter">{calculateCalories()}</h3>
+                                            <span className="text-white/30 font-bold text-lg uppercase italic">kcal</span>
                                         </div>
                                         <p className="text-white/40 text-xs font-medium px-4 leading-relaxed">
                                             Customized logic based on Mifflin-St Jeor & {metrics.goal} goal.
@@ -247,7 +247,7 @@ export default function InductionFlow({ onComplete }: { onComplete: (calories: n
                                             type="number"
                                             value={metrics.target_weight}
                                             onChange={(e) => setMetrics({ ...metrics, target_weight: parseFloat(e.target.value) })}
-                                            className="w-full p-6 bg-slate-50 dark:bg-white/5 rounded-[2rem] border-2 border-slate-100 dark:border-white/10 focus:border-blue-600 outline-none font-black text-2xl transition-all"
+                                            className="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border-2 border-slate-100 dark:border-white/10 focus:border-blue-600 outline-none font-black text-xl transition-all"
                                         />
                                     </div>
                                 </div>
@@ -257,20 +257,20 @@ export default function InductionFlow({ onComplete }: { onComplete: (calories: n
                 </div>
 
                 {/* Footer Navigation */}
-                <div className="pt-10 flex gap-4 relative z-10">
+                <div className="pt-6 flex gap-3 relative z-10">
                     {step > 1 && (
                         <button
                             onClick={prevStep}
-                            className="p-6 bg-slate-100 dark:bg-white/5 text-slate-900 dark:text-white rounded-[2rem] hover:bg-slate-200 transition-all border border-slate-100 dark:border-white/5"
+                            className="p-4 bg-slate-100 dark:bg-white/5 text-slate-900 dark:text-white rounded-2xl hover:bg-slate-200 transition-all border border-slate-100 dark:border-white/5"
                         >
-                            <ChevronLeft size={24} />
+                            <ChevronLeft size={20} />
                         </button>
                     )}
                     <button
                         onClick={nextStep}
-                        className="flex-1 py-6 bg-blue-600 text-white font-black rounded-[2rem] shadow-2xl shadow-blue-600/30 hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 text-lg"
+                        className="flex-1 py-4 bg-blue-600 text-white font-black rounded-2xl shadow-xl shadow-blue-600/30 hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-base"
                     >
-                        {step === totalSteps ? 'Activate Profile' : 'Next Step'} <ChevronRight size={24} />
+                        {step === totalSteps ? 'Activate Profile' : 'Next Step'} <ChevronRight size={20} />
                     </button>
                 </div>
             </motion.div>
