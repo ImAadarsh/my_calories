@@ -1492,7 +1492,6 @@ export default function Dashboard() {
                     <div className="flex justify-between items-start">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">Meal Detail</p>
                           <span className="text-[9px] font-black uppercase px-2 py-0.5 bg-blue-50 dark:bg-blue-600/20 text-blue-600 dark:text-blue-400 rounded-lg tracking-wider">
                             {selectedMeal.meal_type || 'snack'}
                           </span>
@@ -1500,7 +1499,7 @@ export default function Dashboard() {
                             {selectedMeal.time}
                           </span>
                         </div>
-                        <h3 className="text-2xl font-black text-slate-900 dark:text-white font-display leading-tight">{selectedMeal.food_name}</h3>
+                        <h3 className="text-xl font-black text-slate-900 dark:text-white font-display leading-tight">{selectedMeal.food_name}</h3>
                       </div>
                       <div className="px-5 py-3 bg-blue-50 dark:bg-blue-600/10 rounded-2xl">
                         <p className="text-xl font-black text-blue-600 dark:text-blue-400">{selectedMeal.calories}<span className="text-[10px] ml-1">kcal</span></p>
