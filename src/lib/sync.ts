@@ -46,7 +46,7 @@ export async function syncDailyReport(userId: string, date: string) {
             await query(
                 `INSERT INTO daily_reports 
                  (user_id, report_date, total_calories, total_protein, total_carbs, total_fats, is_ai_report, analysis_content, feeling)
-                 VALUES (?, ?, ?, ?, ?, ?, 0, '', 'neutral')`,
+                 VALUES (?, ?, ?, ?, ?, ?, 0, '{}', 'neutral')`,
                 [userId, date, calories, protein, carbs, fats]
             );
             console.log(`[Sync] Created new summary report for ${date}`);

@@ -6,18 +6,21 @@ export async function analyzeFoodImage(imageBuffer: Buffer, mimeType: string, us
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
   const prompt = `
-    Analyze this food image and provide the following information in JSON format:
+    You are a professional nutritionist. Analyze this food image or nutrition label and provide accurate nutritional data.
+    If a nutrition label is visible, prioritize the exact values from the label.
+    Provide the information in JSON format:
     {
-      "food_name": "Name of the food",
+      "food_name": "Name of the food item",
       "calories": 123,
       "protein": 10,
       "carbs": 20,
       "fats": 5,
-      "description": "Brief description of the meal and estimated portion size"
+      "description": "Brief description including portion size estimation"
     }
-    ${isSubtraction ? 'IMPORTANT: This image shows LEFTOVER food. Estimate the calories in the LEFTOVERS shown in the image as a POSITIVE number (e.g. 100), but I will subtract it from the total. The description should specify these are leftovers.' : ''}
-    ${userDescription ? `The user also provided this additional context: "${userDescription}". Use this to improve your accuracy.` : ''}
-    If there is no food in the image, return an error message.
+
+    ${isSubtraction ? 'IMPORTANT: This image shows LEFTOVER food. Estimate the calories and macros in the LEFTOVERS shown in the image as POSITIVE numbers (e.g. 100), as they will be subtracted from the original log. The description should specify these are leftovers.' : ''}
+    ${userDescription ? `User context: "${userDescription}".` : ''}
+    If no food or label is detected, return an error. Provide ONLY the JSON.
   `;
 
   const result = await model.generateContent([

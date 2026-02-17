@@ -215,6 +215,11 @@ export default function Dashboard() {
         setSelectedMeal(null);
         fetchMeals();
         fetchStats();
+        fetchDailyReport();
+        if (historicalDate) {
+          fetchHistoricalReport(historicalDate);
+          fetchHistoricalMeals(historicalDate);
+        }
       }
     } catch (e) {
       console.error("Failed to delete meal", e);
@@ -642,7 +647,11 @@ export default function Dashboard() {
         {isLogging && (
           <MealLogger
             onClose={() => { setIsLogging(false); setSubtractionMealId(null); }}
-            onComplete={fetchMeals}
+            onComplete={() => {
+              fetchMeals();
+              fetchStats();
+              fetchDailyReport();
+            }}
             subtractionMealId={subtractionMealId || undefined}
             initialMealType={subtractionMealId ? meals.find(m => m.id === subtractionMealId)?.meal_type : undefined}
           />

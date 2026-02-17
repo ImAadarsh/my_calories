@@ -193,7 +193,7 @@ export default function MealLogger({ onClose, onComplete, subtractionMealId, ini
                                         />
                                     </div>
 
-                                    <div className="grid grid-cols-3 gap-3">
+                                    <div className="grid grid-cols-3 gap-3 hidden">
                                         <div className="space-y-1.5 text-center">
                                             <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Prot (g)</label>
                                             <input
