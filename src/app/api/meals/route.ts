@@ -28,14 +28,17 @@ export async function POST(req: Request) {
         // Get current time in IST
         const nowIST = formatInTimeZone(new Date(), TIMEZONE, 'yyyy-MM-dd HH:mm:ss');
 
+        const mealType = formData.get('mealType') as string || 'snack';
+
         await query(
-            "INSERT INTO meals (user_id, food_name, description, calories, eaten_at) VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO meals (user_id, food_name, description, calories, eaten_at, meal_type) VALUES (?, ?, ?, ?, ?, ?)",
             [
                 session.user.id,
                 analysis.food_name,
                 analysis.description,
                 analysis.calories,
-                nowIST
+                nowIST,
+                mealType
             ]
         );
 

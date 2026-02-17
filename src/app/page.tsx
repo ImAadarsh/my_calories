@@ -2,7 +2,7 @@
 
 import { useSession, signIn, signOut } from "next-auth/react";
 import { useState, useEffect } from "react";
-import { Camera, Plus, BarChart3, History, LogOut, Utensils, Flame, User, Target, ChevronRight, Activity, Weight, Sparkles } from "lucide-react";
+import { Camera, Plus, BarChart3, History, LogOut, Utensils, Flame, User, Target, ChevronRight, Activity, Weight, Sparkles, Trash2, Edit, Save, X, Info } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AreaChart, Area, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import MealLogger from "@/components/MealLogger";
@@ -17,6 +17,10 @@ export default function Dashboard() {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [needsInduction, setNeedsInduction] = useState(false);
   const [selectedMeal, setSelectedMeal] = useState<any>(null);
+  const [isEditingMeal, setIsEditingMeal] = useState(false);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [editedMeal, setEditedMeal] = useState<any>(null);
+  const [editedProfile, setEditedProfile] = useState<any>(null);
 
   useEffect(() => {
     if (session) {
@@ -68,6 +72,55 @@ export default function Dashboard() {
     if (res.ok) {
       const data = await res.json();
       setMeals(data);
+    }
+  };
+
+  const handleDeleteMeal = async (mealId: number) => {
+    if (!confirm("Are you sure you want to delete this meal?")) return;
+    try {
+      const res = await fetch(`/api/meals/${mealId}`, { method: 'DELETE' });
+      if (res.ok) {
+        setSelectedMeal(null);
+        fetchMeals();
+        fetchStats();
+      }
+    } catch (e) {
+      console.error("Failed to delete meal", e);
+    }
+  };
+
+  const handleUpdateMeal = async () => {
+    try {
+      const res = await fetch(`/api/meals/${editedMeal.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editedMeal)
+      });
+      if (res.ok) {
+        setIsEditingMeal(false);
+        setSelectedMeal(editedMeal);
+        fetchMeals();
+        fetchStats();
+      }
+    } catch (e) {
+      console.error("Failed to update meal", e);
+    }
+  };
+
+  const handleUpdateProfile = async () => {
+    try {
+      const res = await fetch('/api/user', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editedProfile)
+      });
+      if (res.ok) {
+        setIsEditingProfile(false);
+        fetchUserProfile();
+        fetchStats();
+      }
+    } catch (e) {
+      console.error("Failed to update profile", e);
     }
   };
 
@@ -469,7 +522,12 @@ export default function Dashboard() {
                           {meal.calories}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-black text-slate-900 truncate leading-none mb-2 text-lg">{meal.food_name}</h4>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-[9px] font-black uppercase px-2 py-0.5 bg-blue-50 text-blue-600 rounded-lg tracking-wider">
+                              {meal.meal_type || 'snack'}
+                            </span>
+                          </div>
+                          <h4 className="font-black text-slate-900 truncate leading-none mb-1 text-lg">{meal.food_name}</h4>
                           <p className="text-xs text-slate-400 font-bold tracking-tight line-clamp-2">{meal.description}</p>
                         </div>
                         <div className="bg-slate-50 p-2 rounded-xl group-hover:bg-blue-50 transition-colors">
@@ -573,32 +631,117 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-8">
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                      <Weight size={12} className="text-blue-500" /> Current Weight
-                    </p>
-                    <p className="text-2xl font-black text-slate-900">{userProfile?.weight || '--'}<span className="text-sm text-slate-400 ml-1">kg</span></p>
+                {!isEditingProfile ? (
+                  <>
+                    <div className="grid grid-cols-2 gap-8">
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                          <Weight size={12} className="text-blue-500" /> Current Weight
+                        </p>
+                        <p className="text-2xl font-black text-slate-900">{userProfile?.weight || '--'}<span className="text-sm text-slate-400 ml-1">kg</span></p>
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                          <Target size={12} className="text-purple-500" /> Target Weight
+                        </p>
+                        <p className="text-2xl font-black text-slate-900">{userProfile?.target_weight || '--'}<span className="text-sm text-slate-400 ml-1">kg</span></p>
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                          <Activity size={12} className="text-orange-500" /> Daily Goal
+                        </p>
+                        <p className="text-2xl font-black text-slate-900">{userProfile?.daily_calorie_goal || '--'}<span className="text-sm text-slate-400 ml-1">kcal</span></p>
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                          <User size={12} className="text-green-500" /> Height
+                        </p>
+                        <p className="text-2xl font-black text-slate-900">{userProfile?.height || '--'}<span className="text-sm text-slate-400 ml-1">cm</span></p>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setEditedProfile(userProfile);
+                        setIsEditingProfile(true);
+                      }}
+                      className="w-full py-5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black rounded-3xl flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all shadow-xl"
+                    >
+                      <Edit size={20} /> Edit Profile
+                    </button>
+                  </>
+                ) : (
+                  <div className="space-y-8">
+                    <div className="grid grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 block">Weight (kg)</label>
+                        <input
+                          type="number"
+                          value={editedProfile.weight}
+                          onChange={(e) => setEditedProfile({ ...editedProfile, weight: parseFloat(e.target.value) })}
+                          className="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border-2 border-transparent focus:border-blue-600 outline-none dark:text-white font-black text-xl transition-all"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 block">Target (kg)</label>
+                        <input
+                          type="number"
+                          value={editedProfile.target_weight}
+                          onChange={(e) => setEditedProfile({ ...editedProfile, target_weight: parseFloat(e.target.value) })}
+                          className="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border-2 border-transparent focus:border-blue-600 outline-none dark:text-white font-black text-xl transition-all"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 block">Height (cm)</label>
+                        <input
+                          type="number"
+                          value={editedProfile.height}
+                          onChange={(e) => setEditedProfile({ ...editedProfile, height: parseInt(e.target.value) })}
+                          className="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border-2 border-transparent focus:border-blue-600 outline-none dark:text-white font-black text-xl transition-all"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 block">Daily Goal</label>
+                        <input
+                          type="number"
+                          value={editedProfile.daily_calorie_goal}
+                          onChange={(e) => setEditedProfile({ ...editedProfile, daily_calorie_goal: parseInt(e.target.value) })}
+                          className="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border-2 border-transparent focus:border-blue-600 outline-none dark:text-white font-black text-xl transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 block">Goal Type</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {['lose', 'maintain', 'gain', 'muscle'].map((g) => (
+                          <button
+                            key={g}
+                            onClick={() => setEditedProfile({ ...editedProfile, goal: g })}
+                            className={`py-3 px-4 rounded-xl border-2 font-black text-xs uppercase transition-all ${editedProfile.goal === g ? 'border-blue-600 bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'border-slate-100 dark:border-white/5 text-slate-400 dark:text-slate-500 hover:border-slate-200'}`}
+                          >
+                            {g}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 pt-4">
+                      <button
+                        onClick={() => setIsEditingProfile(false)}
+                        className="flex-1 py-5 bg-slate-100 dark:bg-white/5 text-slate-900 dark:text-white font-black rounded-3xl flex items-center justify-center gap-2"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleUpdateProfile}
+                        className="flex-1 py-5 bg-blue-600 text-white font-black rounded-3xl flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20"
+                      >
+                        <Save size={20} /> Save
+                      </button>
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                      <Target size={12} className="text-purple-500" /> Target Weight
-                    </p>
-                    <p className="text-2xl font-black text-slate-900">{userProfile?.target_weight || '--'}<span className="text-sm text-slate-400 ml-1">kg</span></p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                      <Activity size={12} className="text-orange-500" /> Daily Goal
-                    </p>
-                    <p className="text-2xl font-black text-slate-900">{userProfile?.daily_calorie_goal || '--'}<span className="text-sm text-slate-400 ml-1">kcal</span></p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                      <User size={12} className="text-green-500" /> Height
-                    </p>
-                    <p className="text-2xl font-black text-slate-900">{userProfile?.height || '--'}<span className="text-sm text-slate-400 ml-1">cm</span></p>
-                  </div>
-                </div>
+                )}
 
                 <div className="pt-4">
                   <p className="text-[10px] font-black text-slate-400 mb-4 uppercase tracking-widest">Selected Goal</p>
@@ -686,28 +829,120 @@ export default function Dashboard() {
               <div className="w-12 h-1 bg-slate-200 dark:bg-white/10 rounded-full mx-auto mb-8" />
 
               <div className="space-y-6">
-                <div className="flex justify-between items-start">
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">Meal Detail</p>
-                    <h3 className="text-3xl font-black text-slate-900 dark:text-white font-display leading-tight">{selectedMeal.food_name}</h3>
-                  </div>
-                  <div className="px-5 py-3 bg-blue-50 dark:bg-blue-600/10 rounded-2xl">
-                    <p className="text-2xl font-black text-blue-600 dark:text-blue-400">{selectedMeal.calories}<span className="text-xs ml-1">kcal</span></p>
-                  </div>
-                </div>
+                {!isEditingMeal ? (
+                  <>
+                    <div className="flex justify-between items-start">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">Meal Detail</p>
+                          <span className="text-[9px] font-black uppercase px-2 py-0.5 bg-blue-50 dark:bg-blue-600/20 text-blue-600 dark:text-blue-400 rounded-lg tracking-wider">
+                            {selectedMeal.meal_type || 'snack'}
+                          </span>
+                        </div>
+                        <h3 className="text-3xl font-black text-slate-900 dark:text-white font-display leading-tight">{selectedMeal.food_name}</h3>
+                      </div>
+                      <div className="px-5 py-3 bg-blue-50 dark:bg-blue-600/10 rounded-2xl">
+                        <p className="text-2xl font-black text-blue-600 dark:text-blue-400">{selectedMeal.calories}<span className="text-xs ml-1">kcal</span></p>
+                      </div>
+                    </div>
 
-                <div className="p-6 bg-slate-50 dark:bg-white/5 rounded-[2rem] border border-slate-100 dark:border-white/5">
-                  <p className="text-xs font-bold text-slate-500 dark:text-slate-400 leading-relaxed italic">
-                    "{selectedMeal.description}"
-                  </p>
-                </div>
+                    <div className="p-6 bg-slate-50 dark:bg-white/5 rounded-[2rem] border border-slate-100 dark:border-white/5">
+                      <p className="text-xs font-bold text-slate-500 dark:text-slate-400 leading-relaxed italic">
+                        "{selectedMeal.description}"
+                      </p>
+                    </div>
 
-                <button
-                  onClick={() => setSelectedMeal(null)}
-                  className="w-full py-5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black rounded-2xl hover:scale-[1.02] active:scale-95 transition-all shadow-xl"
-                >
-                  Done
-                </button>
+                    <div className="grid grid-cols-2 gap-4">
+                      <button
+                        onClick={() => {
+                          setEditedMeal(selectedMeal);
+                          setIsEditingMeal(true);
+                        }}
+                        className="flex-1 py-5 bg-slate-100 dark:bg-white/5 text-slate-900 dark:text-white font-black rounded-2xl flex items-center justify-center gap-2 hover:bg-slate-200 transition-all"
+                      >
+                        <Edit size={18} /> Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteMeal(selectedMeal.id)}
+                        className="flex-1 py-5 bg-red-50 dark:bg-red-500/10 text-red-600 font-black rounded-2xl flex items-center justify-center gap-2 hover:bg-red-100 transition-all"
+                      >
+                        <Trash2 size={18} /> Delete
+                      </button>
+                    </div>
+
+                    <button
+                      onClick={() => setSelectedMeal(null)}
+                      className="w-full py-5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black rounded-2xl hover:scale-[1.02] active:scale-95 transition-all shadow-xl"
+                    >
+                      Done
+                    </button>
+                  </>
+                ) : (
+                  <div className="space-y-6">
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Meal Type</label>
+                        <div className="grid grid-cols-4 gap-2">
+                          {['breakfast', 'lunch', 'dinner', 'snack'].map((type) => (
+                            <button
+                              key={type}
+                              onClick={() => setEditedMeal({ ...editedMeal, meal_type: type })}
+                              className={`py-3 rounded-xl border-2 text-[10px] font-black uppercase transition-all ${editedMeal.meal_type === type ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-100 dark:border-white/5 text-slate-400'}`}
+                            >
+                              {type}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Meal Name</label>
+                        <input
+                          type="text"
+                          value={editedMeal.food_name}
+                          onChange={(e) => setEditedMeal({ ...editedMeal, food_name: e.target.value })}
+                          className="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border-2 border-transparent focus:border-blue-600 outline-none font-black text-lg transition-all"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Calories</label>
+                          <input
+                            type="number"
+                            value={editedMeal.calories}
+                            onChange={(e) => setEditedMeal({ ...editedMeal, calories: parseInt(e.target.value) })}
+                            className="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border-2 border-transparent focus:border-blue-600 outline-none font-black text-lg transition-all"
+                          />
+                        </div>
+                        <div className="flex flex-col justify-end">
+                          <span className="text-slate-400 font-black mb-4 ml-1">kcal</span>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Description</label>
+                        <textarea
+                          value={editedMeal.description}
+                          onChange={(e) => setEditedMeal({ ...editedMeal, description: e.target.value })}
+                          className="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border-2 border-transparent focus:border-blue-600 outline-none font-bold text-sm transition-all h-24 resize-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <button
+                        onClick={() => setIsEditingMeal(false)}
+                        className="flex-1 py-5 bg-slate-100 dark:bg-white/5 text-slate-900 dark:text-white font-black rounded-2xl flex items-center justify-center gap-2"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleUpdateMeal}
+                        className="flex-1 py-5 bg-blue-600 text-white font-black rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20"
+                      >
+                        <Save size={18} /> Save
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </motion.div>
           </motion.div>

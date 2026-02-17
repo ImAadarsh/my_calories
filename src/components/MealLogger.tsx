@@ -9,6 +9,7 @@ export default function MealLogger({ onClose, onComplete }: { onClose: () => voi
     const [preview, setPreview] = useState<string | null>(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [description, setDescription] = useState("");
+    const [mealType, setMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>('snack');
     const cameraInputRef = useRef<HTMLInputElement>(null);
     const galleryInputRef = useRef<HTMLInputElement>(null);
 
@@ -29,6 +30,7 @@ export default function MealLogger({ onClose, onComplete }: { onClose: () => voi
         if (description) {
             formData.append('userDescription', description);
         }
+        formData.append('mealType', mealType);
 
         try {
             const res = await fetch('/api/meals', {
@@ -93,19 +95,33 @@ export default function MealLogger({ onClose, onComplete }: { onClose: () => voi
                             </div>
 
                             {!isAnalyzing && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="space-y-3"
-                                >
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Optional Insight</label>
-                                    <textarea
-                                        value={description}
-                                        onChange={(e) => setDescription(e.target.value)}
-                                        placeholder="Organic, large portion, extra spicy..."
-                                        className="w-full p-6 bg-slate-50 dark:bg-white/5 rounded-[2rem] border-2 border-transparent focus:border-blue-600 outline-none text-slate-900 dark:text-white transition-all resize-none h-28 text-sm font-medium"
-                                    />
-                                </motion.div>
+                                <>
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Meal Type</label>
+                                        <div className="grid grid-cols-4 gap-2">
+                                            {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map((type) => (
+                                                <button
+                                                    key={type}
+                                                    type="button"
+                                                    onClick={() => setMealType(type)}
+                                                    className={`py-3 px-1 rounded-xl border-2 text-[10px] font-black uppercase transition-all ${mealType === type ? 'border-blue-600 bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'border-slate-100 dark:border-white/5 text-slate-400'}`}
+                                                >
+                                                    {type}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Optional Insight</label>
+                                        <textarea
+                                            value={description}
+                                            onChange={(e) => setDescription(e.target.value)}
+                                            placeholder="Organic, large portion, extra spicy..."
+                                            className="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-[1.5rem] border-2 border-transparent focus:border-blue-600 outline-none text-slate-900 dark:text-white transition-all resize-none h-24 text-sm font-medium"
+                                        />
+                                    </div>
+                                </>
                             )}
                         </div>
                     ) : (
