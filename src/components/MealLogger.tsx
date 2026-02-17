@@ -140,7 +140,7 @@ export default function MealLogger({ onClose, onComplete, subtractionMealId, ini
                                         <motion.div
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 1 }}
-                                            className="absolute inset-0 bg-blue-600/80 backdrop-blur-md flex flex-col items-center justify-center text-white"
+                                            className="absolute inset-0 bg-gold/80 dark:bg-gold/90 backdrop-blur-md flex flex-col items-center justify-center text-white dark:text-slate-950"
                                         >
                                             <motion.div
                                                 animate={{ rotate: 360 }}
@@ -150,7 +150,7 @@ export default function MealLogger({ onClose, onComplete, subtractionMealId, ini
                                                 <Sparkles size={64} />
                                             </motion.div>
                                             <p className="font-black text-xl font-display tracking-tight">GPT Analysis in Progress</p>
-                                            <p className="text-blue-100 text-xs mt-2 uppercase tracking-widest font-black opacity-60">Wait for accuracy...</p>
+                                            <p className="text-white/80 dark:text-slate-950/60 text-xs mt-2 uppercase tracking-widest font-black opacity-60">Wait for accuracy...</p>
                                         </motion.div>
                                     )}
                                 </AnimatePresence>
@@ -166,7 +166,7 @@ export default function MealLogger({ onClose, onComplete, subtractionMealId, ini
                                                     key={type}
                                                     type="button"
                                                     onClick={() => setMealType(type)}
-                                                    className={`py-3 px-1 rounded-xl border-2 text-[10px] font-black uppercase transition-all ${mealType === type ? 'border-blue-600 bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'border-slate-100 dark:border-white/5 text-slate-400'}`}
+                                                    className={`py-3 px-1 rounded-xl border-2 text-[10px] font-black uppercase transition-all ${mealType === type ? 'border-blue-600 dark:border-gold bg-blue-600 dark:bg-gold text-white dark:text-slate-950 shadow-lg shadow-blue-600/20 dark:shadow-gold/20' : 'border-slate-100 dark:border-white/5 text-slate-400 dark:text-cream/40'}`}
                                                 >
                                                     {type}
                                                 </button>
@@ -180,7 +180,7 @@ export default function MealLogger({ onClose, onComplete, subtractionMealId, ini
                                             value={description}
                                             onChange={(e) => setDescription(e.target.value)}
                                             placeholder={subtractionMealId ? "What's left over?" : "Organic, large portion, extra spicy..."}
-                                            className="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-[1.5rem] border-2 border-transparent focus:border-blue-600 outline-none text-slate-900 dark:text-white transition-all resize-none h-24 text-sm font-medium"
+                                            className="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-[1.5rem] border-2 border-transparent focus:border-blue-600 dark:focus:border-gold outline-none text-slate-900 dark:text-cream transition-all resize-none h-24 text-sm font-medium"
                                         />
                                     </div>
 
@@ -192,7 +192,7 @@ export default function MealLogger({ onClose, onComplete, subtractionMealId, ini
                                                     <button
                                                         key={i}
                                                         onClick={() => handleQuickLog(s)}
-                                                        className="px-3 py-2 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 text-[10px] font-bold text-slate-400 hover:border-blue-600 hover:text-blue-600 transition-all flex items-center gap-1"
+                                                        className="px-3 py-2 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 text-[10px] font-bold text-slate-400 dark:text-cream/40 hover:border-blue-600 dark:hover:border-gold hover:text-blue-600 dark:hover:text-gold transition-all flex items-center gap-1"
                                                     >
                                                         <Sparkles size={10} /> {s.food_name}
                                                     </button>
@@ -207,14 +207,14 @@ export default function MealLogger({ onClose, onComplete, subtractionMealId, ini
                         <div className="space-y-4">
                             <button
                                 onClick={() => cameraInputRef.current?.click()}
-                                className="w-full h-40 bg-slate-50 dark:bg-white/5 rounded-[2.5rem] border-4 border-dashed border-slate-200 dark:border-white/10 flex flex-col items-center justify-center text-slate-400 hover:border-blue-600 hover:bg-blue-50/30 transition-all group relative overflow-hidden"
+                                className="w-full h-40 bg-slate-50 dark:bg-white/5 rounded-[2.5rem] border-4 border-dashed border-slate-200 dark:border-white/10 flex flex-col items-center justify-center text-slate-400 hover:border-blue-600 dark:hover:border-gold hover:bg-blue-50/30 dark:hover:bg-gold/10 transition-all group relative overflow-hidden"
                             >
-                                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-br from-blue-600/10 to-transparent" />
-                                <div className="w-16 h-16 bg-white dark:bg-white/10 rounded-2xl shadow-xl flex items-center justify-center text-blue-600 mb-4 group-hover:scale-110 transition-all duration-500">
+                                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-br from-blue-600/10 dark:from-gold/10 to-transparent" />
+                                <div className="w-16 h-16 bg-white dark:bg-gold/10 rounded-2xl shadow-xl flex items-center justify-center text-blue-600 dark:text-gold mb-4 group-hover:scale-110 transition-all duration-500">
                                     <Camera size={24} />
                                 </div>
-                                <p className="font-black text-slate-900 dark:text-white text-sm font-display">{subtractionMealId ? 'Subtract Leftovers' : 'Capture Food'}</p>
-                                <p className="text-[10px] font-black uppercase tracking-widest mt-2 opacity-60">Powered by Gemini 2.5</p>
+                                <p className="font-black text-slate-900 dark:text-cream text-sm font-display">{subtractionMealId ? 'Subtract Leftovers' : 'Capture Food'}</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest mt-2 opacity-60 dark:text-cream/40">Powered by Gemini 2.5</p>
                             </button>
 
                             <button
@@ -233,7 +233,7 @@ export default function MealLogger({ onClose, onComplete, subtractionMealId, ini
                                             <button
                                                 key={i}
                                                 onClick={() => handleQuickLog(s)}
-                                                className="px-4 py-3 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 text-xs font-bold text-slate-600 dark:text-slate-400 hover:border-blue-600 hover:text-blue-600 transition-all flex items-center gap-2"
+                                                className="px-4 py-3 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 text-xs font-bold text-slate-600 dark:text-cream/60 hover:border-blue-600 dark:hover:border-gold hover:text-blue-600 dark:hover:text-gold transition-all flex items-center gap-2"
                                             >
                                                 <Sparkles size={12} /> {s.food_name}
                                             </button>
@@ -272,7 +272,7 @@ export default function MealLogger({ onClose, onComplete, subtractionMealId, ini
                                 </button>
                                 <button
                                     onClick={handleUpload}
-                                    className={`flex-[2] py-4 ${subtractionMealId ? 'bg-orange-600' : 'bg-blue-600'} text-white font-black rounded-[2rem] shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 group text-xs`}
+                                    className={`flex-[2] py-4 ${subtractionMealId ? 'bg-orange-600 dark:bg-gold' : 'bg-blue-600 dark:bg-gold'} text-white dark:text-slate-950 font-black rounded-[2rem] shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 group text-xs shadow-blue-600/20 dark:shadow-gold/20`}
                                 >
                                     {subtractionMealId ? 'Subtract' : 'Log Meal'} <Send size={16} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
                                 </button>
