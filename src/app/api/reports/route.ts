@@ -52,7 +52,7 @@ export async function GET(req: Request) {
             ) as any[];
 
             const dailyTrend = await query(
-                `SELECT report_date, total_calories, total_protein, total_carbs, total_fats, feeling FROM daily_reports 
+                `SELECT report_date, total_calories, total_protein, total_carbs, total_fats, feeling, is_ai_report FROM daily_reports 
                  WHERE user_id = ? AND ${dateFilter} 
                  ORDER BY report_date ASC`,
                 params
@@ -88,12 +88,12 @@ export async function POST(req: Request) {
 
         // Check if report already exists
         const existing = await query(
-            "SELECT id FROM daily_reports WHERE user_id = ? AND report_date = ?",
+            "SELECT id, is_ai_report FROM daily_reports WHERE user_id = ? AND report_date = ?",
             [session.user.id, todayIST]
         ) as any[];
 
-        if (existing.length > 0) {
-            return NextResponse.json({ error: "Report already generated for today" }, { status: 400 });
+        if (existing.length > 0 && existing[0].is_ai_report === 1) {
+            return NextResponse.json({ error: "AI Report already generated for today" }, { status: 400 });
         }
 
         // Get today's meals
@@ -112,22 +112,45 @@ export async function POST(req: Request) {
         // Generate AI analysis
         const analysis = await analyzeDay(meals, profile[0]);
 
-        // Save report with metrics in dedicated columns
-        await query(
-            `INSERT INTO daily_reports 
-            (user_id, report_date, analysis_content, feeling, total_calories, total_protein, total_carbs, total_fats) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-            [
-                session.user.id,
-                todayIST,
-                JSON.stringify(analysis),
-                feeling,
-                analysis.stats?.calories || 0,
-                analysis.stats?.protein || 0,
-                analysis.stats?.carbs || 0,
-                analysis.stats?.fats || 0
-            ]
-        );
+        // Calculate actual totals from meals to ensure consistency
+        const totalCalories = meals.reduce((sum, m) => sum + (m.calories || 0), 0);
+        const totalProtein = meals.reduce((sum, m) => sum + (m.protein || 0), 0);
+        const totalCarbs = meals.reduce((sum, m) => sum + (m.carbs || 0), 0);
+        const totalFats = meals.reduce((sum, m) => sum + (m.fats || 0), 0);
+
+        // Save report (UPSERT style)
+        if (existing.length > 0) {
+            await query(
+                `UPDATE daily_reports 
+                 SET analysis_content = ?, feeling = ?, total_calories = ?, total_protein = ?, total_carbs = ?, total_fats = ?, is_ai_report = 1
+                 WHERE id = ?`,
+                [
+                    JSON.stringify(analysis),
+                    feeling,
+                    totalCalories || analysis.stats?.calories || 0,
+                    totalProtein || analysis.stats?.protein || 0,
+                    totalCarbs || analysis.stats?.carbs || 0,
+                    totalFats || analysis.stats?.fats || 0,
+                    existing[0].id
+                ]
+            );
+        } else {
+            await query(
+                `INSERT INTO daily_reports 
+                (user_id, report_date, analysis_content, feeling, total_calories, total_protein, total_carbs, total_fats, is_ai_report) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+                [
+                    session.user.id,
+                    todayIST,
+                    JSON.stringify(analysis),
+                    feeling,
+                    totalCalories || analysis.stats?.calories || 0,
+                    totalProtein || analysis.stats?.protein || 0,
+                    totalCarbs || analysis.stats?.carbs || 0,
+                    totalFats || analysis.stats?.fats || 0
+                ]
+            );
+        }
 
         return NextResponse.json({ status: 'success', analysis });
     } catch (error: any) {

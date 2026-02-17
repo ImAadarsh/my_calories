@@ -10,6 +10,9 @@ export default function MealLogger({ onClose, onComplete, subtractionMealId, ini
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [description, setDescription] = useState("");
     const [mealType, setMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>(initialMealType || 'snack');
+    const [protein, setProtein] = useState(0);
+    const [carbs, setCarbs] = useState(0);
+    const [fats, setFats] = useState(0);
     const [suggestions, setSuggestions] = useState<any[]>([]);
     const cameraInputRef = useRef<HTMLInputElement>(null);
     const galleryInputRef = useRef<HTMLInputElement>(null);
@@ -52,6 +55,9 @@ export default function MealLogger({ onClose, onComplete, subtractionMealId, ini
                     calories: suggestion.calories,
                     description: suggestion.description,
                     mealType: mealType,
+                    protein: suggestion.protein || 0,
+                    carbs: suggestion.carbs || 0,
+                    fats: suggestion.fats || 0,
                     isQuickLog: true
                 })
             });
@@ -87,6 +93,9 @@ export default function MealLogger({ onClose, onComplete, subtractionMealId, ini
         if (subtractionMealId) {
             formData.append('subtractionMealId', subtractionMealId.toString());
         }
+        formData.append('protein', protein.toString());
+        formData.append('carbs', carbs.toString());
+        formData.append('fats', fats.toString());
 
         try {
             const res = await fetch('/api/meals', {
@@ -180,8 +189,38 @@ export default function MealLogger({ onClose, onComplete, subtractionMealId, ini
                                             value={description}
                                             onChange={(e) => setDescription(e.target.value)}
                                             placeholder={subtractionMealId ? "What's left over?" : "Organic, large portion, extra spicy..."}
-                                            className="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-[1.5rem] border-2 border-transparent focus:border-blue-600 dark:focus:border-gold outline-none text-slate-900 dark:text-cream transition-all resize-none h-24 text-sm font-medium"
+                                            className="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-[1.5rem] border-2 border-transparent focus:border-blue-600 dark:focus:border-gold outline-none text-slate-900 dark:text-cream transition-all resize-none h-20 text-sm font-medium"
                                         />
+                                    </div>
+
+                                    <div className="grid grid-cols-3 gap-3">
+                                        <div className="space-y-1.5 text-center">
+                                            <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Prot (g)</label>
+                                            <input
+                                                type="number"
+                                                value={protein}
+                                                onChange={(e) => setProtein(parseInt(e.target.value) || 0)}
+                                                className="w-full p-3 bg-slate-50 dark:bg-white/5 rounded-2xl border-2 border-transparent focus:border-emerald-500 outline-none text-center font-black text-sm dark:text-cream"
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5 text-center">
+                                            <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Carb (g)</label>
+                                            <input
+                                                type="number"
+                                                value={carbs}
+                                                onChange={(e) => setCarbs(parseInt(e.target.value) || 0)}
+                                                className="w-full p-3 bg-slate-50 dark:bg-white/5 rounded-2xl border-2 border-transparent focus:border-amber-500 outline-none text-center font-black text-sm dark:text-cream"
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5 text-center">
+                                            <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Fat (g)</label>
+                                            <input
+                                                type="number"
+                                                value={fats}
+                                                onChange={(e) => setFats(parseInt(e.target.value) || 0)}
+                                                className="w-full p-3 bg-slate-50 dark:bg-white/5 rounded-2xl border-2 border-transparent focus:border-rose-500 outline-none text-center font-black text-sm dark:text-cream"
+                                            />
+                                        </div>
                                     </div>
 
                                     {subtractionMealId && suggestions.length > 0 && (

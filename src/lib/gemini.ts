@@ -10,6 +10,9 @@ export async function analyzeFoodImage(imageBuffer: Buffer, mimeType: string, us
     {
       "food_name": "Name of the food",
       "calories": 123,
+      "protein": 10,
+      "carbs": 20,
+      "fats": 5,
       "description": "Brief description of the meal and estimated portion size"
     }
     ${isSubtraction ? 'IMPORTANT: This image shows LEFTOVER food. Estimate the calories in the LEFTOVERS shown in the image as a POSITIVE number (e.g. 100), but I will subtract it from the total. The description should specify these are leftovers.' : ''}
@@ -42,7 +45,7 @@ export async function analyzeFoodImage(imageBuffer: Buffer, mimeType: string, us
 export async function analyzeDay(meals: any[], userProfile: any) {
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-  const mealsSummary = meals.map(m => `- ${m.food_name}: ${m.calories} kcal (${m.meal_type})`).join('\n');
+  const mealsSummary = meals.map(m => `- ${m.food_name}: ${m.calories} kcal (P: ${m.protein}g, C: ${m.carbs}g, F: ${m.fats}g) [${m.meal_type}]`).join('\n');
 
   const prompt = `
     Analyze the following user's meals for the day and provide a high-end nutritional report in JSON format.

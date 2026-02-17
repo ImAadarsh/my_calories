@@ -23,7 +23,10 @@ export async function GET(req: Request) {
         let sql = `
             SELECT 
                 DATE(eaten_at) as date, 
-                SUM(calories) as total_calories 
+                SUM(calories) as total_calories,
+                SUM(protein) as total_protein,
+                SUM(carbs) as total_carbs,
+                SUM(fats) as total_fats
             FROM meals 
             WHERE user_id = ?
         `;

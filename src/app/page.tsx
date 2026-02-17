@@ -2,13 +2,14 @@
 
 import { useSession, signIn, signOut } from "next-auth/react";
 import { useState, useEffect } from "react";
-import { Camera, Plus, BarChart3, History, LogOut, Utensils, Flame, User, Target, ChevronRight, Activity, Weight, Sparkles, Trash2, Edit, Save, X, Info } from "lucide-react";
+import { Camera, Plus, BarChart3, History, LogOut, Utensils, Flame, User, Target, ChevronRight, Activity, Weight, Sparkles, Trash2, Edit, Save, X, Info, Sun, CloudSun, Moon, Coffee, Clock } from "lucide-react";
 import { useScroll, useTransform, useMotionValue, motion, AnimatePresence } from "framer-motion";
 import { AreaChart, Area, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell, PieChart, Pie } from 'recharts';
 import { useRef } from "react";
 import MealLogger from "@/components/MealLogger";
 import InductionFlow from "@/components/InductionFlow";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { div } from "framer-motion/client";
 
 export default function Dashboard() {
   const { data: session, status } = useSession();
@@ -222,9 +223,13 @@ export default function Dashboard() {
       });
       if (res.ok) {
         setIsEditingMeal(false);
-        setSelectedMeal(editedMeal);
+        setSelectedMeal({ ...editedMeal });
         fetchMeals();
         fetchStats();
+        fetchDailyReport(); // Corrected from fetchReports
+        if (historicalDate) {
+          fetchHistoricalReport(historicalDate);
+        }
       }
     } catch (e) {
       console.error("Failed to update meal", e);
@@ -671,13 +676,43 @@ export default function Dashboard() {
                     </div>
                   ) : (
                     meals.map((meal, i) => {
-                      const mealColors = (() => {
+                      const mealConfig = (() => {
                         switch (meal.meal_type?.toLowerCase()) {
-                          case 'breakfast': return 'bg-blue-50/50 text-blue-600 border-blue-100 dark:bg-gold/5 dark:text-gold dark:border-gold/20';
-                          case 'lunch': return 'bg-emerald-50/50 text-emerald-600 border-emerald-100 dark:bg-gold/5 dark:text-gold dark:border-gold/20';
-                          case 'dinner': return 'bg-indigo-50/50 text-indigo-600 border-indigo-100 dark:bg-gold/5 dark:text-gold dark:border-gold/20';
-                          case 'snack': return 'bg-amber-50/50 text-amber-600 border-amber-100 dark:bg-gold/5 dark:text-gold dark:border-gold/20';
-                          default: return 'bg-slate-50 text-slate-600 border-slate-100 dark:bg-white/5 dark:text-cream dark:border-white/10';
+                          case 'breakfast': return {
+                            colors: 'bg-white/60 dark:bg-emerald-400/5 border-slate-100 dark:border-emerald-400/20',
+                            accent: 'bg-emerald-300 dark:bg-emerald-400',
+                            icon: <Sun size={14} className="text-emerald-400 dark:text-emerald-300" />,
+                            text: 'text-emerald-600 dark:text-emerald-300',
+                            badge: 'bg-emerald-50/50 dark:bg-emerald-400/10'
+                          };
+                          case 'lunch': return {
+                            colors: 'bg-white/60 dark:bg-amber-400/5 border-slate-100 dark:border-amber-400/20',
+                            accent: 'bg-amber-500 dark:bg-amber-400',
+                            icon: <CloudSun size={14} className="text-amber-600 dark:text-amber-400" />,
+                            text: 'text-amber-700 dark:text-amber-400',
+                            badge: 'bg-amber-100 dark:bg-amber-400/20'
+                          };
+                          case 'dinner': return {
+                            colors: 'bg-white/60 dark:bg-indigo-400/5 border-slate-100 dark:border-indigo-400/20',
+                            accent: 'bg-indigo-500 dark:bg-indigo-400',
+                            icon: <Moon size={14} className="text-indigo-600 dark:text-indigo-300" />,
+                            text: 'text-indigo-700 dark:text-indigo-300',
+                            badge: 'bg-indigo-50 dark:bg-indigo-400/20'
+                          };
+                          case 'snack': return {
+                            colors: 'bg-white/60 dark:bg-rose-400/5 border-slate-100 dark:border-rose-400/20',
+                            accent: 'bg-rose-500 dark:bg-rose-400',
+                            icon: <Coffee size={14} className="text-rose-600 dark:text-rose-300" />,
+                            text: 'text-rose-700 dark:text-rose-300',
+                            badge: 'bg-rose-50 dark:bg-rose-400/20'
+                          };
+                          default: return {
+                            colors: 'bg-white/60 dark:bg-white/5 border-slate-100 dark:border-white/10',
+                            accent: 'bg-slate-400 dark:bg-slate-500',
+                            icon: <Utensils size={14} className="text-slate-500 dark:text-cream/50" />,
+                            text: 'text-slate-600 dark:text-cream/60',
+                            badge: 'bg-slate-50 dark:bg-white/10'
+                          };
                         }
                       })();
 
@@ -688,20 +723,36 @@ export default function Dashboard() {
                           transition={{ delay: i * 0.1 }}
                           onClick={() => setSelectedMeal(meal)}
                           key={i}
-                          className={`flex gap-4 p-4 rounded-[2rem] items-center border shadow-sm hover:shadow-md hover:scale-[1.01] transition-all group cursor-pointer ${mealColors} bg-white dark:bg-slate-900`}
+                          className={`flex gap-5 p-5 rounded-[2.5rem] items-center border shadow-sm hover:shadow-xl hover:scale-[1.02] transition-all group cursor-pointer relative overflow-hidden backdrop-blur-md ${mealConfig.colors}`}
                         >
-                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black group-hover:scale-110 transition-transform ${mealColors.split(' ')[0]} ${mealColors.split(' ')[1]}`}>
-                            {meal.calories}
+                          {/* Left Accent Bar */}
+                          <div className={`absolute left-0 top-6 bottom-6 w-1 rounded-r-full group-hover:top-4 group-hover:bottom-4 transition-all duration-500 ${mealConfig.accent}`} />
+
+                          <div className={`w-14 h-14 rounded-2xl flex flex-col items-center justify-center font-black group-hover:rotate-3 transition-all duration-500 shadow-lg ${mealConfig.badge} border border-white/20 dark:border-white/5`}>
+                            <span className="text-lg leading-none">{meal.calories}</span>
+                            <span className="text-[8px] opacity-60 uppercase tracking-tighter">kcal</span>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-0.5">
-                              <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-lg tracking-wider ${mealColors.split(' ')[0]} ${mealColors.split(' ')[1]}`}>
+
+                          <div className="flex-1 min-w-0 py-1">
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${mealConfig.badge} ${mealConfig.text} border border-black/5 dark:border-white/5`}>
+                                {mealConfig.icon}
                                 {meal.meal_type || 'snack'}
-                              </span>
-                              <p className="text-[10px] font-bold text-slate-400 dark:text-cream/40">{meal.time || 'Today'}</p>
+                              </div>
+                              <div className="flex items-center gap-1 opacity-40 group-hover:opacity-100 transition-opacity">
+                                <Clock size={10} className="dark:text-cream" />
+                                <span className="text-[10px] font-bold text-slate-400 dark:text-cream">{meal.time || 'Today'}</span>
+                              </div>
                             </div>
-                            <h4 className="text-sm font-black text-slate-900 dark:text-cream truncate uppercase tracking-tight">{meal.food_name}</h4>
-                            <p className="text-[10px] text-slate-400 dark:text-cream/30 font-medium truncate italic">"{meal.description}"</p>
+                            <h4 className="text-base font-black text-slate-900 dark:text-cream truncate uppercase tracking-tight group-hover:translate-x-1 transition-transform">{meal.food_name}</h4>
+                            <p className="text-[11px] text-slate-400 dark:text-cream/30 font-medium truncate italic leading-relaxed pl-1 border-l border-slate-200 dark:border-white/10 mt-1">
+                              {meal.description || "No description provided"}
+                            </p>
+                          </div>
+                          <div className="opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-500">
+                            <div className={`p-2 rounded-xl ${mealConfig.badge}`}>
+                              <ChevronRight size={16} className={mealConfig.text} />
+                            </div>
                           </div>
                         </motion.div>
                       );
@@ -845,15 +896,62 @@ export default function Dashboard() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+                <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-sm">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Weekly High</p>
-                  <p className="text-2xl font-black text-slate-900">{stats.length > 0 ? Math.max(...stats.map(s => s.total_calories)) : 0}</p>
+                  <p className="text-2xl font-black text-slate-900 dark:text-cream">{stats.length > 0 ? Math.max(...stats.map(s => s.total_calories)) : 0}</p>
                 </div>
-                <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+                <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-sm">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Avg Intake</p>
-                  <p className="text-2xl font-black text-slate-900">
+                  <p className="text-2xl font-black text-slate-900 dark:text-cream">
                     {stats.length > 0 ? Math.round(stats.reduce((a, b) => a + b.total_calories, 0) / stats.length) : 0}
                   </p>
+                </div>
+              </div>
+
+              {/* New Nutrient Profile Section */}
+              <div className="bg-slate-900 rounded-[3rem] p-8 text-white shadow-2xl space-y-8">
+                <h4 className="font-black text-lg text-cream mb-6 uppercase tracking-widest flex items-center gap-2">
+                  <Activity size={18} className="text-emerald-400" /> Nutrient Profile
+                </h4>
+
+                <div className="grid grid-cols-3 gap-4">
+                  {[
+                    { label: 'Protein', value: stats.reduce((a, b) => a + (b.total_protein || 0), 0), color: 'emerald-400', secondary: 'emerald-500' },
+                    { label: 'Carbs', value: stats.reduce((a, b) => a + (b.total_carbs || 0), 0), color: 'amber-400', secondary: 'amber-500' },
+                    { label: 'Fats', value: stats.reduce((a, b) => a + (b.total_fats || 0), 0), color: 'rose-400', secondary: 'rose-500' }
+                  ].map((macro) => (
+                    <div key={macro.label} className="text-center space-y-1">
+                      <p className="text-[8px] font-black text-white/40 uppercase tracking-widest">{macro.label}</p>
+                      <p className="text-xl font-black text-white">{Math.round(macro.value / (stats.length || 1))}g</p>
+                      <div className="w-12 h-1 bg-white/10 mx-auto rounded-full overflow-hidden">
+                        <div className={`h-full bg-${macro.color}`} style={{ width: '60%' }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="pt-6 border-t border-white/5">
+                  <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-4">Calorie Contribution</p>
+                  <div className="flex h-3 w-full rounded-full overflow-hidden bg-white/5">
+                    {(() => {
+                      const p = stats.reduce((a, b) => a + (b.total_protein || 0), 0) * 4;
+                      const c = stats.reduce((a, b) => a + (b.total_carbs || 0), 0) * 4;
+                      const f = stats.reduce((a, b) => a + (b.total_fats || 0), 0) * 9;
+                      const total = p + c + f || 1;
+                      return (
+                        <>
+                          <div style={{ width: `${(p / total) * 100}%` }} className="bg-emerald-400" title="Protein" />
+                          <div style={{ width: `${(c / total) * 100}%` }} className="bg-amber-400" title="Carbs" />
+                          <div style={{ width: `${(f / total) * 100}%` }} className="bg-rose-400" title="Fats" />
+                        </>
+                      );
+                    })()}
+                  </div>
+                  <div className="flex justify-between mt-2">
+                    <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-emerald-400" /><span className="text-[8px] font-black text-white/40 uppercase">Protein</span></div>
+                    <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-amber-400" /><span className="text-[8px] font-black text-white/40 uppercase">Carbs</span></div>
+                    <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-rose-400" /><span className="text-[8px] font-black text-white/40 uppercase">Fats</span></div>
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -1022,13 +1120,21 @@ export default function Dashboard() {
                 <div className="space-y-8">
                   {/* AI Report Section - NOW FIRST */}
                   <div className="space-y-6">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">AI Intelligence Report</p>
+                    <div className="flex items-center justify-between px-1">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Daily Insights</p>
+                      {historicalReport && (
+                        <div className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-wider ${historicalReport.is_ai_report ? 'bg-blue-600/10 text-blue-600 dark:bg-gold/10 dark:text-gold border border-blue-600/20 dark:border-gold/20' : 'bg-slate-100 text-slate-400 dark:bg-white/5 dark:text-cream/40'}`}>
+                          {historicalReport.is_ai_report ? 'AI Deep Dive' : 'Live Sync Progress'}
+                        </div>
+                      )}
+                    </div>
                     {historicalReport ? (
                       <div className="space-y-6">
-                        <div className="p-4 bg-blue-50 dark:bg-gold/5 rounded-2xl border border-blue-100 dark:border-gold/10">
-                          <p className="text-slate-700 dark:text-cream/80 text-xs italic leading-relaxed">"{historicalReport.summary}"</p>
-                        </div>
-
+                        {historicalReport.summary && (
+                          <div className="p-4 bg-blue-50 dark:bg-gold/5 rounded-2xl border border-blue-100 dark:border-gold/10">
+                            <p className="text-slate-700 dark:text-cream/80 text-xs italic leading-relaxed">"{historicalReport.summary}"</p>
+                          </div>
+                        )}
                         <div className="grid grid-cols-2 gap-3">
                           {historicalReport.table?.slice(0, 4).map((row: any, i: number) => (
                             <div key={i} className="flex flex-col gap-1 bg-white dark:bg-white/5 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
@@ -1512,6 +1618,21 @@ export default function Dashboard() {
                       </p>
                     </div>
 
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="p-4 bg-emerald-50 dark:bg-emerald-500/10 rounded-2xl border border-emerald-100 dark:border-emerald-500/20 text-center">
+                        <p className="text-[8px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-1">Protein</p>
+                        <p className="text-lg font-black text-emerald-700 dark:text-emerald-300">{selectedMeal.protein || 0}<span className="text-[10px] ml-0.5">g</span></p>
+                      </div>
+                      <div className="p-4 bg-amber-50 dark:bg-amber-500/10 rounded-2xl border border-amber-100 dark:border-amber-500/20 text-center">
+                        <p className="text-[8px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest mb-1">Carbs</p>
+                        <p className="text-lg font-black text-amber-700 dark:text-amber-300">{selectedMeal.carbs || 0}<span className="text-[10px] ml-0.5">g</span></p>
+                      </div>
+                      <div className="p-4 bg-rose-50 dark:bg-rose-500/10 rounded-2xl border border-rose-100 dark:border-rose-500/20 text-center">
+                        <p className="text-[8px] font-black text-rose-600 dark:text-rose-400 uppercase tracking-widest mb-1">Fats</p>
+                        <p className="text-lg font-black text-rose-700 dark:text-rose-300">{selectedMeal.fats || 0}<span className="text-[10px] ml-0.5">g</span></p>
+                      </div>
+                    </div>
+
                     <div className="grid grid-cols-2 gap-4">
                       <button
                         onClick={() => {
@@ -1596,6 +1717,36 @@ export default function Dashboard() {
                           className="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border-2 border-transparent focus:border-blue-600 dark:focus:border-gold outline-none font-bold text-sm transition-all h-24 resize-none dark:text-cream"
                         />
                       </div>
+
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="space-y-1.5">
+                          <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest ml-1">Protein (g)</label>
+                          <input
+                            type="number"
+                            value={editedMeal.protein || 0}
+                            onChange={(e) => setEditedMeal({ ...editedMeal, protein: parseInt(e.target.value) || 0 })}
+                            className="w-full p-3 bg-slate-50 dark:bg-white/5 rounded-xl border-2 border-transparent focus:border-emerald-500 outline-none font-black text-sm text-center dark:text-cream"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest ml-1">Carbs (g)</label>
+                          <input
+                            type="number"
+                            value={editedMeal.carbs || 0}
+                            onChange={(e) => setEditedMeal({ ...editedMeal, carbs: parseInt(e.target.value) || 0 })}
+                            className="w-full p-3 bg-slate-50 dark:bg-white/5 rounded-xl border-2 border-transparent focus:border-amber-500 outline-none font-black text-sm text-center dark:text-cream"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest ml-1">Fats (g)</label>
+                          <input
+                            type="number"
+                            value={editedMeal.fats || 0}
+                            onChange={(e) => setEditedMeal({ ...editedMeal, fats: parseInt(e.target.value) || 0 })}
+                            className="w-full p-3 bg-slate-50 dark:bg-white/5 rounded-xl border-2 border-transparent focus:border-rose-500 outline-none font-black text-sm text-center dark:text-cream"
+                          />
+                        </div>
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -1619,6 +1770,6 @@ export default function Dashboard() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </div >
   );
 }
