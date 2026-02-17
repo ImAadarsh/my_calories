@@ -5,8 +5,9 @@ import { authOptions } from '@/lib/auth';
 
 export async function PUT(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
+    const { id: mealId } = await params;
     const session = await getServerSession(authOptions) as any;
     if (!session || !session.user || !session.user.id) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -14,7 +15,6 @@ export async function PUT(
 
     try {
         const { food_name, calories, description, meal_type } = await req.json();
-        const mealId = params.id;
 
         await query(
             "UPDATE meals SET food_name = ?, calories = ?, description = ?, meal_type = ? WHERE id = ? AND user_id = ?",
@@ -30,15 +30,15 @@ export async function PUT(
 
 export async function DELETE(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
+    const { id: mealId } = await params;
     const session = await getServerSession(authOptions) as any;
     if (!session || !session.user || !session.user.id) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     try {
-        const mealId = params.id;
 
         await query(
             "DELETE FROM meals WHERE id = ? AND user_id = ?",
