@@ -6,14 +6,14 @@ import { Plus, Utensils, BarChart3, History } from "lucide-react";
 interface TabNavigationProps {
     activeTab: 'daily' | 'stats' | 'reports' | 'profile';
     onTabChange: (tab: 'daily' | 'stats' | 'reports' | 'profile') => void;
-    onAddClick: () => void;
+    setIsLogging: (isLogging: boolean) => void;
 }
 
-export function TabNavigation({ activeTab, onTabChange, onAddClick }: TabNavigationProps) {
+export function TabNavigation({ activeTab, onTabChange, setIsLogging }: TabNavigationProps) {
     return (
         <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto h-[70px] bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-t border-slate-100 dark:border-white/5 px-6 flex items-center justify-between z-50 pb-2">
             <button
-                onClick={onAddClick}
+                onClick={() => setIsLogging(true)}
                 className="relative flex flex-col items-center gap-1.5 group"
             >
                 <div className="w-11 h-11 bg-blue-600 dark:bg-gold text-white dark:text-slate-950 rounded-2xl shadow-lg shadow-blue-600/30 dark:shadow-gold/30 flex items-center justify-center group-hover:scale-110 group-active:scale-95 transition-all">

@@ -10,6 +10,7 @@ interface StatsTabProps {
     customRange: { start: string; end: string };
     setCustomRange: (range: { start: string; end: string }) => void;
     stats: any[];
+    breakdown: any[];
     meals: any[];
 }
 
@@ -19,8 +20,26 @@ export function StatsTab({
     customRange,
     setCustomRange,
     stats,
+    breakdown,
     meals
 }: StatsTabProps) {
+    // Cast stats values to numbers to ensure charts render correctly
+    const processedStats = stats.map(s => ({
+        ...s,
+        total_calories: Number(s.total_calories || 0),
+        total_protein: Number(s.total_protein || 0),
+        total_carbs: Number(s.total_carbs || 0),
+        total_fats: Number(s.total_fats || 0),
+    }));
+
+    // Process breakdown into names for the chart
+    const processedBreakdown = [
+        { name: 'Breakfast', value: Number(breakdown.find(b => b.meal_type === 'breakfast')?.calories || 0) },
+        { name: 'Lunch', value: Number(breakdown.find(b => b.meal_type === 'lunch')?.calories || 0) },
+        { name: 'Dinner', value: Number(breakdown.find(b => b.meal_type === 'dinner')?.calories || 0) },
+        { name: 'Snacks', value: Number(breakdown.find(b => b.meal_type === 'snack')?.calories || 0) },
+    ].filter(d => d.value > 0);
+
     return (
         <motion.div
             key="stats"
@@ -66,6 +85,53 @@ export function StatsTab({
                 )}
             </div>
 
+            {/* Nutrient Profile Section (Moved to TOP) */}
+            <div className="bg-slate-900 rounded-[3rem] p-8 text-white shadow-2xl space-y-8">
+                <h4 className="font-black text-lg text-cream/90 mb-6 uppercase tracking-widest flex items-center gap-2">
+                    <Activity size={18} className="text-emerald-400" /> Nutrient Profile
+                </h4>
+
+                <div className="grid grid-cols-3 gap-4">
+                    {[
+                        { label: 'Protein', value: processedStats.reduce((a, b) => a + (b.total_protein || 0), 0), color: 'emerald-400' },
+                        { label: 'Carbs', value: processedStats.reduce((a, b) => a + (b.total_carbs || 0), 0), color: 'amber-400' },
+                        { label: 'Fats', value: processedStats.reduce((a, b) => a + (b.total_fats || 0), 0), color: 'rose-400' }
+                    ].map((macro) => (
+                        <div key={macro.label} className="text-center space-y-1">
+                            <p className="text-[8px] font-black text-white/40 uppercase tracking-widest">{macro.label}</p>
+                            <p className="text-xl font-black text-white">{Math.round(macro.value / (processedStats.length || 1))}g</p>
+                            <div className="w-12 h-1 bg-white/10 mx-auto rounded-full overflow-hidden">
+                                <div className={`h-full bg-${macro.color}`} style={{ width: '60%' }} />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="pt-6 border-t border-white/5">
+                    <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-4">Calorie Contribution</p>
+                    <div className="flex h-3 w-full rounded-full overflow-hidden bg-white/5">
+                        {(() => {
+                            const p = processedStats.reduce((a, b) => a + (b.total_protein || 0), 0) * 4;
+                            const c = processedStats.reduce((a, b) => a + (b.total_carbs || 0), 0) * 4;
+                            const f = processedStats.reduce((a, b) => a + (b.total_fats || 0), 0) * 9;
+                            const total = p + c + f || 1;
+                            return (
+                                <>
+                                    <div style={{ width: `${(p / total) * 100}%` }} className="bg-emerald-400" title="Protein" />
+                                    <div style={{ width: `${(c / total) * 100}%` }} className="bg-amber-400" title="Carbs" />
+                                    <div style={{ width: `${(f / total) * 100}%` }} className="bg-rose-400" title="Fats" />
+                                </>
+                            );
+                        })()}
+                    </div>
+                    <div className="flex justify-between mt-2">
+                        <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-emerald-400" /><span className="text-[8px] font-black text-white/40 uppercase">Protein</span></div>
+                        <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-amber-400" /><span className="text-[8px] font-black text-white/40 uppercase">Carbs</span></div>
+                        <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-rose-400" /><span className="text-[8px] font-black text-white/40 uppercase">Fats</span></div>
+                    </div>
+                </div>
+            </div>
+
             <div className="bg-slate-900 rounded-[3rem] p-10 text-white shadow-2xl relative overflow-hidden">
                 <div className="relative z-10">
                     <h4 className="font-black text-2xl font-display mb-8 flex items-center gap-3 text-cream/90">
@@ -74,7 +140,7 @@ export function StatsTab({
 
                     <div className="h-72 w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={stats}>
+                            <AreaChart data={processedStats}>
                                 <defs>
                                     <linearGradient id="colorCal" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="5%" stopColor="#D4AF37" stopOpacity={0.8} />
@@ -119,12 +185,9 @@ export function StatsTab({
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                             <Pie
-                                data={[
-                                    { name: 'Breakfast', value: meals.filter(m => m.meal_type === 'breakfast').reduce((a, b) => a + b.calories, 0) },
-                                    { name: 'Lunch', value: meals.filter(m => m.meal_type === 'lunch').reduce((a, b) => a + b.calories, 0) },
-                                    { name: 'Dinner', value: meals.filter(m => m.meal_type === 'dinner').reduce((a, b) => a + b.calories, 0) },
-                                    { name: 'Snacks', value: meals.filter(m => m.meal_type === 'snack').reduce((a, b) => a + b.calories, 0) },
-                                ].filter(d => d.value > 0)}
+                                data={processedBreakdown}
+                                cx="50%"
+                                cy="50%"
                                 innerRadius={60}
                                 outerRadius={80}
                                 paddingAngle={5}
@@ -147,7 +210,7 @@ export function StatsTab({
                             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: ['#D4AF37', '#E5C100', '#F9E27E', '#FCF3CF'][i] }} />
                             <span className="text-[10px] font-black uppercase text-slate-400 dark:text-cream/50">{type}</span>
                             <span className="text-[10px] font-black text-slate-900 dark:text-cream ml-auto">
-                                {meals.filter(m => m.meal_type === type).reduce((a, b) => a + b.calories, 0)} kcal
+                                {Math.round(breakdown.find(b => b.meal_type === type)?.calories || 0)} kcal
                             </span>
                         </div>
                     ))}
@@ -157,60 +220,13 @@ export function StatsTab({
             <div className="grid grid-cols-2 gap-4">
                 <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-sm">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Weekly High</p>
-                    <p className="text-2xl font-black text-slate-900 dark:text-cream">{stats.length > 0 ? Math.max(...stats.map(s => s.total_calories)) : 0}</p>
+                    <p className="text-2xl font-black text-slate-900 dark:text-cream">{processedStats.length > 0 ? Math.max(...processedStats.map(s => s.total_calories)) : 0}</p>
                 </div>
                 <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-sm">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Avg Intake</p>
                     <p className="text-2xl font-black text-slate-900 dark:text-cream">
-                        {stats.length > 0 ? Math.round(stats.reduce((a, b) => a + b.total_calories, 0) / stats.length) : 0}
+                        {processedStats.length > 0 ? Math.round(processedStats.reduce((a, b) => a + b.total_calories, 0) / processedStats.length) : 0}
                     </p>
-                </div>
-            </div>
-
-            {/* Nutrient Profile Section */}
-            <div className="bg-slate-900 rounded-[3rem] p-8 text-white shadow-2xl space-y-8">
-                <h4 className="font-black text-lg text-cream/90 mb-6 uppercase tracking-widest flex items-center gap-2">
-                    <Activity size={18} className="text-emerald-400" /> Nutrient Profile
-                </h4>
-
-                <div className="grid grid-cols-3 gap-4">
-                    {[
-                        { label: 'Protein', value: stats.reduce((a, b) => a + (b.total_protein || 0), 0), color: 'emerald-400' },
-                        { label: 'Carbs', value: stats.reduce((a, b) => a + (b.total_carbs || 0), 0), color: 'amber-400' },
-                        { label: 'Fats', value: stats.reduce((a, b) => a + (b.total_fats || 0), 0), color: 'rose-400' }
-                    ].map((macro) => (
-                        <div key={macro.label} className="text-center space-y-1">
-                            <p className="text-[8px] font-black text-white/40 uppercase tracking-widest">{macro.label}</p>
-                            <p className="text-xl font-black text-white">{Math.round(macro.value / (stats.length || 1))}g</p>
-                            <div className="w-12 h-1 bg-white/10 mx-auto rounded-full overflow-hidden">
-                                <div className={`h-full bg-${macro.color}`} style={{ width: '60%' }} />
-                            </div>
-                        </div>
-                    ))}
-                </div>
-
-                <div className="pt-6 border-t border-white/5">
-                    <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-4">Calorie Contribution</p>
-                    <div className="flex h-3 w-full rounded-full overflow-hidden bg-white/5">
-                        {(() => {
-                            const p = stats.reduce((a, b) => a + (b.total_protein || 0), 0) * 4;
-                            const c = stats.reduce((a, b) => a + (b.total_carbs || 0), 0) * 4;
-                            const f = stats.reduce((a, b) => a + (b.total_fats || 0), 0) * 9;
-                            const total = p + c + f || 1;
-                            return (
-                                <>
-                                    <div style={{ width: `${(p / total) * 100}%` }} className="bg-emerald-400" title="Protein" />
-                                    <div style={{ width: `${(c / total) * 100}%` }} className="bg-amber-400" title="Carbs" />
-                                    <div style={{ width: `${(f / total) * 100}%` }} className="bg-rose-400" title="Fats" />
-                                </>
-                            );
-                        })()}
-                    </div>
-                    <div className="flex justify-between mt-2">
-                        <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-emerald-400" /><span className="text-[8px] font-black text-white/40 uppercase">Protein</span></div>
-                        <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-amber-400" /><span className="text-[8px] font-black text-white/40 uppercase">Carbs</span></div>
-                        <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-rose-400" /><span className="text-[8px] font-black text-white/40 uppercase">Fats</span></div>
-                    </div>
                 </div>
             </div>
         </motion.div>

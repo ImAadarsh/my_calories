@@ -46,9 +46,32 @@ export async function GET(req: Request) {
         }
 
         sql += " GROUP BY date ORDER BY date ASC";
-
         const stats = await query(sql, params);
-        return NextResponse.json(stats);
+
+        // Breakdown query
+        let breakdownSql = `
+            SELECT meal_type, SUM(calories) as calories
+            FROM meals 
+            WHERE user_id = ?
+        `;
+        let breakdownParams: any[] = [session.user.id];
+
+        if (type === 'daily') {
+            breakdownSql += " AND DATE(eaten_at) = ?";
+            breakdownParams.push(todayIST);
+        } else if (type === 'custom' && startDate && endDate) {
+            breakdownSql += " AND DATE(eaten_at) BETWEEN ? AND ?";
+            breakdownParams.push(startDate, endDate);
+        } else {
+            const interval = 7;
+            breakdownSql += " AND DATE(eaten_at) BETWEEN DATE_SUB(?, INTERVAL ? DAY) AND ?";
+            breakdownParams.push(todayIST, interval, todayIST);
+        }
+        breakdownSql += " GROUP BY meal_type";
+
+        const breakdown = await query(breakdownSql, breakdownParams);
+
+        return NextResponse.json({ trend: stats, breakdown });
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }

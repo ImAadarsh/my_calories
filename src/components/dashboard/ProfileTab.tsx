@@ -15,6 +15,7 @@ interface ProfileTabProps {
     editedProfile: any;
     setEditedProfile: (profile: any) => void;
     onUpdateProfile: () => void;
+    setNeedsInduction: (needsInduction: boolean) => void;
 }
 
 export function ProfileTab({
@@ -24,7 +25,8 @@ export function ProfileTab({
     setIsEditingProfile,
     editedProfile,
     setEditedProfile,
-    onUpdateProfile
+    onUpdateProfile,
+    setNeedsInduction
 }: ProfileTabProps) {
     return (
         <motion.div
