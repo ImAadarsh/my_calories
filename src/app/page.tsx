@@ -36,10 +36,15 @@ export default function Dashboard() {
   const [selectedFeeling, setSelectedFeeling] = useState<string | null>(null);
   const [isSavingReport, setIsSavingReport] = useState(false);
   const [cumulativeData, setCumulativeData] = useState<any>(null);
-  const [selectedRange, setSelectedRange] = useState<'weekly' | 'monthly' | 'yearly'>('weekly');
+  const [selectedRange, setSelectedRange] = useState<'daily' | 'weekly' | 'custom'>('weekly');
+  const [customRange, setCustomRange] = useState({
+    start: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    end: new Date().toISOString().split('T')[0]
+  });
   const [isFetchingCumulative, setIsFetchingCumulative] = useState(false);
   const [historicalReport, setHistoricalReport] = useState<any>(null);
   const [historicalDate, setHistoricalDate] = useState(new Date().toISOString().split('T')[0]);
+  const [historicalMeals, setHistoricalMeals] = useState<any[]>([]);
 
   useEffect(() => {
     if (session) {
@@ -48,13 +53,19 @@ export default function Dashboard() {
       fetchStats();
       fetchDailyReport();
       fetchCumulativeData(selectedRange);
+      fetchHistoricalReport(historicalDate);
+      fetchHistoricalMeals(historicalDate);
     }
-  }, [session, selectedRange]);
+  }, [session, selectedRange, customRange, historicalDate]);
 
   const fetchCumulativeData = async (range: string) => {
     setIsFetchingCumulative(true);
     try {
-      const res = await fetch(`/api/reports?range=${range}`);
+      let url = `/api/reports?range=${range}`;
+      if (range === 'custom') {
+        url += `&startDate=${customRange.start}&endDate=${customRange.end}`;
+      }
+      const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
         setCumulativeData(data);
@@ -79,6 +90,18 @@ export default function Dashboard() {
       }
     } catch (e) {
       console.error("Failed to fetch historical report", e);
+    }
+  };
+
+  const fetchHistoricalMeals = async (date: string) => {
+    try {
+      const res = await fetch(`/api/meals?date=${date}`);
+      if (res.ok) {
+        const data = await res.json();
+        setHistoricalMeals(data);
+      }
+    } catch (e) {
+      console.error("Failed to fetch historical meals", e);
     }
   };
 
@@ -157,7 +180,11 @@ export default function Dashboard() {
   };
 
   const fetchStats = async () => {
-    const res = await fetch('/api/stats');
+    let url = `/api/stats?type=${selectedRange}`;
+    if (selectedRange === 'custom') {
+      url += `&startDate=${customRange.start}&endDate=${customRange.end}`;
+    }
+    const res = await fetch(url);
     if (res.ok) {
       const data = await res.json();
       setStats(data);
@@ -693,6 +720,43 @@ export default function Dashboard() {
               exit={{ opacity: 0, y: -20 }}
               className="px-6 space-y-8"
             >
+              {/* Unified Range Filter */}
+              <div className="space-y-4">
+                <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-2xl shadow-inner">
+                  {(['daily', 'weekly', 'custom'] as const).map((r) => (
+                    <button
+                      key={r}
+                      onClick={() => setSelectedRange(r)}
+                      className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${selectedRange === r ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-sm' : 'text-slate-400'}`}
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+
+                {selectedRange === 'custom' && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="flex gap-2 items-center px-2"
+                  >
+                    <input
+                      type="date"
+                      value={customRange.start}
+                      onChange={(e) => setCustomRange(prev => ({ ...prev, start: e.target.value }))}
+                      className="flex-1 p-3 bg-slate-50 dark:bg-white/5 rounded-2xl text-[10px] font-black dark:text-white outline-none border border-slate-100 dark:border-white/10"
+                    />
+                    <span className="text-slate-400 font-black text-[10px] uppercase">to</span>
+                    <input
+                      type="date"
+                      value={customRange.end}
+                      onChange={(e) => setCustomRange(prev => ({ ...prev, end: e.target.value }))}
+                      className="flex-1 p-3 bg-slate-50 dark:bg-white/5 rounded-2xl text-[10px] font-black dark:text-white outline-none border border-slate-100 dark:border-white/10"
+                    />
+                  </motion.div>
+                )}
+              </div>
+
               <div className="bg-slate-900 rounded-[3rem] p-10 text-white shadow-2xl relative overflow-hidden">
                 <div className="relative z-10">
                   <h4 className="font-black text-2xl font-display mb-8 flex items-center gap-3">
@@ -803,16 +867,41 @@ export default function Dashboard() {
               exit={{ opacity: 0, y: -20 }}
               className="px-6 space-y-8"
             >
-              <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-2xl">
-                {(['weekly', 'monthly', 'yearly'] as const).map((r) => (
-                  <button
-                    key={r}
-                    onClick={() => setSelectedRange(r)}
-                    className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${selectedRange === r ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-sm' : 'text-slate-400'}`}
+              {/* Unified Range Filter */}
+              <div className="space-y-4">
+                <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-2xl shadow-inner">
+                  {(['daily', 'weekly', 'custom'] as const).map((r) => (
+                    <button
+                      key={r}
+                      onClick={() => setSelectedRange(r)}
+                      className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${selectedRange === r ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-sm' : 'text-slate-400'}`}
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+
+                {selectedRange === 'custom' && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="flex gap-2 items-center px-2"
                   >
-                    {r}
-                  </button>
-                ))}
+                    <input
+                      type="date"
+                      value={customRange.start}
+                      onChange={(e) => setCustomRange(prev => ({ ...prev, start: e.target.value }))}
+                      className="flex-1 p-3 bg-slate-50 dark:bg-white/5 rounded-2xl text-[10px] font-black dark:text-white outline-none border border-slate-100 dark:border-white/10"
+                    />
+                    <span className="text-slate-400 font-black text-[10px] uppercase">to</span>
+                    <input
+                      type="date"
+                      value={customRange.end}
+                      onChange={(e) => setCustomRange(prev => ({ ...prev, end: e.target.value }))}
+                      className="flex-1 p-3 bg-slate-50 dark:bg-white/5 rounded-2xl text-[10px] font-black dark:text-white outline-none border border-slate-100 dark:border-white/10"
+                    />
+                  </motion.div>
+                )}
               </div>
 
               {cumulativeData && (
@@ -924,47 +1013,89 @@ export default function Dashboard() {
                     onChange={(e) => {
                       setHistoricalDate(e.target.value);
                       fetchHistoricalReport(e.target.value);
+                      fetchHistoricalMeals(e.target.value);
                     }}
                     className="p-2 bg-slate-50 dark:bg-white/5 rounded-xl text-[10px] font-black tracking-tight dark:text-white outline-none"
                   />
                 </div>
 
-                {historicalReport ? (
+                <div className="space-y-8">
+                  {/* AI Report Section - NOW FIRST */}
                   <div className="space-y-6">
-                    <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-2xl">
-                      <p className="text-slate-600 dark:text-slate-300 text-xs italic line-clamp-3">"{historicalReport.summary}"</p>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      {historicalReport.table?.slice(0, 4).map((row: any, i: number) => (
-                        <div key={i} className="flex flex-col gap-0.5 bg-slate-50 dark:bg-white/5 p-3 rounded-xl border border-slate-100 dark:border-white/5">
-                          <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{row.nutrient}</span>
-                          <span className="text-sm font-black text-slate-900 dark:text-white">{row.intake} <span className="text-[9px] text-slate-400">{row.unit}</span></span>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">AI Intelligence Report</p>
+                    {historicalReport ? (
+                      <div className="space-y-6">
+                        <div className="p-4 bg-blue-50 dark:bg-blue-600/5 rounded-2xl border border-blue-100 dark:border-blue-600/10">
+                          <p className="text-slate-700 dark:text-slate-300 text-xs italic leading-relaxed">"{historicalReport.summary}"</p>
                         </div>
-                      ))}
-                    </div>
 
-                    <div className="bg-blue-600/5 dark:bg-blue-600/10 p-5 rounded-3xl border border-blue-600/10 flex items-center justify-between group cursor-pointer hover:bg-blue-600 hover:text-white transition-all"
-                      onClick={() => {
-                        setDailyReport(historicalReport);
-                        setShowAnalysisModal(true);
-                      }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/20">
-                          <Sparkles size={18} />
+                        <div className="grid grid-cols-2 gap-3">
+                          {historicalReport.table?.slice(0, 4).map((row: any, i: number) => (
+                            <div key={i} className="flex flex-col gap-1 bg-white dark:bg-white/5 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
+                              <span className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em]">{row.nutrient}</span>
+                              <span className="text-base font-black text-slate-900 dark:text-white">{row.intake} <span className="text-[10px] text-slate-400 lowercase">{row.unit}</span></span>
+                            </div>
+                          ))}
                         </div>
-                        <p className="text-[11px] font-black uppercase tracking-widest">Full AI Analysis Report</p>
+
+                        <button
+                          onClick={() => {
+                            setDailyReport(historicalReport);
+                            setShowAnalysisModal(true);
+                          }}
+                          className="w-full bg-blue-600 text-white p-5 rounded-[2rem] shadow-xl shadow-blue-600/20 flex items-center justify-between group hover:bg-blue-700 transition-all font-black text-[11px] uppercase tracking-widest"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-white/20 rounded-xl flex items-center justify-center">
+                              <span className="relative">
+                                <Sparkles size={16} />
+                                <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 2 }} className="absolute inset-0 bg-white/20 blur-md rounded-full" />
+                              </span>
+                            </div>
+                            Full Deep-Dive Analysis
+                          </div>
+                          <ChevronRight size={18} className="group-hover:translate-x-1 transition-all" />
+                        </button>
                       </div>
-                      <ChevronRight size={18} className="opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                    ) : (
+                      <div className="py-12 text-center bg-slate-50 dark:bg-white/5 rounded-[2rem] border-2 border-dashed border-slate-100 dark:border-white/5">
+                        <Sparkles size={32} className="text-slate-200 mx-auto mb-3 opacity-30" />
+                        <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest leading-none mb-1">No AI Report</p>
+                        <p className="text-[8px] text-slate-300 uppercase font-black tracking-widest">Select a date with logs</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Meals on this day Section - NOW SECOND */}
+                  <div className="space-y-4 pt-6 border-t border-slate-50 dark:border-white/5">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Daily Log</p>
+                    <div className="space-y-3">
+                      {historicalMeals.length > 0 ? (
+                        historicalMeals.map((meal, i) => (
+                          <div
+                            key={i}
+                            onClick={() => setSelectedMeal(meal)}
+                            className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-white/5 rounded-3xl border border-slate-100 dark:border-white/5 cursor-pointer hover:scale-[1.01] transition-all group shadow-sm bg-white hover:shadow-md"
+                          >
+                            <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-black text-sm shadow-lg shadow-blue-600/20 group-hover:scale-110 transition-transform">
+                              {meal.calories}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h5 className="text-xs font-black text-slate-900 dark:text-white truncate uppercase tracking-tight">{meal.food_name}</h5>
+                              <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{meal.meal_type || 'snack'}</p>
+                            </div>
+                            <ChevronRight size={16} className="text-slate-300 group-hover:text-blue-500 transition-colors" />
+                          </div>
+                        ))
+                      ) : (
+                        <div className="py-10 text-center bg-slate-50 dark:bg-white/5 rounded-[2rem] border-2 border-dashed border-slate-100 dark:border-white/5">
+                          <History size={24} className="text-slate-200 mx-auto mb-2" />
+                          <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">No individual logs</p>
+                        </div>
+                      )}
                     </div>
                   </div>
-                ) : (
-                  <div className="py-12 flex flex-col items-center gap-2">
-                    <History size={32} className="text-slate-200" />
-                    <p className="text-slate-400 text-[10px] font-black uppercase">No report for this date</p>
-                  </div>
-                )}
+                </div>
               </div>
             </motion.div>
           )}
@@ -1168,6 +1299,7 @@ export default function Dashboard() {
             onClose={() => { setIsLogging(false); setSubtractionMealId(null); }}
             onComplete={fetchMeals}
             subtractionMealId={subtractionMealId || undefined}
+            initialMealType={subtractionMealId ? meals.find(m => m.id === subtractionMealId)?.meal_type : undefined}
           />
         )}
       </AnimatePresence>
@@ -1363,6 +1495,9 @@ export default function Dashboard() {
                           <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">Meal Detail</p>
                           <span className="text-[9px] font-black uppercase px-2 py-0.5 bg-blue-50 dark:bg-blue-600/20 text-blue-600 dark:text-blue-400 rounded-lg tracking-wider">
                             {selectedMeal.meal_type || 'snack'}
+                          </span>
+                          <span className="text-[9px] font-black text-slate-400 bg-slate-100 dark:bg-white/5 px-2 py-0.5 rounded-lg">
+                            {selectedMeal.time}
                           </span>
                         </div>
                         <h3 className="text-2xl font-black text-slate-900 dark:text-white font-display leading-tight">{selectedMeal.food_name}</h3>

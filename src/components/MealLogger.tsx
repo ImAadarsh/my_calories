@@ -4,24 +4,26 @@ import { useState, useRef, useEffect } from "react";
 import { Camera, Upload, X, Send, Sparkles, Image as ImageIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-export default function MealLogger({ onClose, onComplete, subtractionMealId }: { onClose: () => void, onComplete: () => void, subtractionMealId?: number }) {
+export default function MealLogger({ onClose, onComplete, subtractionMealId, initialMealType }: { onClose: () => void, onComplete: () => void, subtractionMealId?: number, initialMealType?: 'breakfast' | 'lunch' | 'dinner' | 'snack' }) {
     const [image, setImage] = useState<File | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [description, setDescription] = useState("");
-    const [mealType, setMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>('snack');
+    const [mealType, setMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>(initialMealType || 'snack');
     const [suggestions, setSuggestions] = useState<any[]>([]);
     const cameraInputRef = useRef<HTMLInputElement>(null);
     const galleryInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        // Auto-select meal type based on time
-        const hour = new Date().getHours();
-        if (hour >= 6 && hour < 11) setMealType('breakfast');
-        else if (hour >= 11 && hour < 16) setMealType('lunch');
-        else if (hour >= 18 && hour < 23) setMealType('dinner');
-        else setMealType('snack');
-    }, []);
+        if (!initialMealType) {
+            // Auto-select meal type based on time if not provided
+            const hour = new Date().getHours();
+            if (hour >= 6 && hour < 11) setMealType('breakfast');
+            else if (hour >= 11 && hour < 16) setMealType('lunch');
+            else if (hour >= 18 && hour < 23) setMealType('dinner');
+            else setMealType('snack');
+        }
+    }, [initialMealType]);
 
     useEffect(() => {
         fetchSuggestions(mealType);
@@ -108,7 +110,7 @@ export default function MealLogger({ onClose, onComplete, subtractionMealId }: {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 glass-dark z-50 flex flex-col p-6 items-center justify-center"
+            className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/80 backdrop-blur-md z-50 flex flex-col p-6 items-center justify-center"
         >
             <motion.div
                 initial={{ scale: 0.9, y: 20 }}
@@ -177,10 +179,27 @@ export default function MealLogger({ onClose, onComplete, subtractionMealId }: {
                                         <textarea
                                             value={description}
                                             onChange={(e) => setDescription(e.target.value)}
-                                            placeholder="Organic, large portion, extra spicy..."
+                                            placeholder={subtractionMealId ? "What's left over?" : "Organic, large portion, extra spicy..."}
                                             className="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-[1.5rem] border-2 border-transparent focus:border-blue-600 outline-none text-slate-900 dark:text-white transition-all resize-none h-24 text-sm font-medium"
                                         />
                                     </div>
+
+                                    {subtractionMealId && suggestions.length > 0 && (
+                                        <div className="space-y-3">
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Related Food Suggestions</p>
+                                            <div className="flex flex-wrap gap-2">
+                                                {suggestions.map((s, i) => (
+                                                    <button
+                                                        key={i}
+                                                        onClick={() => handleQuickLog(s)}
+                                                        className="px-3 py-2 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 text-[10px] font-bold text-slate-400 hover:border-blue-600 hover:text-blue-600 transition-all flex items-center gap-1"
+                                                    >
+                                                        <Sparkles size={10} /> {s.food_name}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </>
                             )}
                         </div>
@@ -194,7 +213,7 @@ export default function MealLogger({ onClose, onComplete, subtractionMealId }: {
                                 <div className="w-16 h-16 bg-white dark:bg-white/10 rounded-2xl shadow-xl flex items-center justify-center text-blue-600 mb-4 group-hover:scale-110 transition-all duration-500">
                                     <Camera size={24} />
                                 </div>
-                                <p className="font-black text-slate-900 dark:text-white text-sm font-display">Capture Food</p>
+                                <p className="font-black text-slate-900 dark:text-white text-sm font-display">{subtractionMealId ? 'Subtract Leftovers' : 'Capture Food'}</p>
                                 <p className="text-[10px] font-black uppercase tracking-widest mt-2 opacity-60">Powered by Gemini 2.5</p>
                             </button>
 

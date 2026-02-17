@@ -60,13 +60,13 @@ export default function InductionFlow({ onComplete }: { onComplete: (calories: n
     };
 
     return (
-        <div className="fixed inset-0 bg-slate-950/20 backdrop-blur-3xl z-50 flex flex-col items-center justify-center p-4">
+        <div className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-3xl z-50 flex flex-col items-center justify-center p-4">
             <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-transparent to-purple-600/10" />
 
             <motion.div
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                className="w-full max-w-md bg-white dark:bg-slate-900 rounded-[3rem] p-8 shadow-[0_40px_100px_rgba(0,0,0,0.1)] relative flex flex-col max-h-[90vh] border border-white/50 dark:border-white/10"
+                className="w-full max-w-md bg-white dark:bg-slate-900 rounded-[3rem] p-8 shadow-[0_40px_100px_rgba(0,0,0,0.1)] relative flex flex-col max-h-[90vh] border border-slate-100 dark:border-white/10"
             >
                 {/* Background Decor */}
                 <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600 opacity-5 rounded-full blur-[60px] translate-x-1/2 -translate-y-1/2" />
@@ -132,7 +132,7 @@ export default function InductionFlow({ onComplete }: { onComplete: (calories: n
                                                 type="number"
                                                 value={metrics.age}
                                                 onChange={(e) => setMetrics({ ...metrics, age: parseInt(e.target.value) })}
-                                                className="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border-2 border-transparent focus:border-blue-600 focus:bg-white outline-none font-black text-xl transition-all shadow-inner"
+                                                className="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border-2 border-slate-100 dark:border-transparent focus:border-blue-600 focus:bg-white dark:focus:bg-white/10 outline-none font-black text-xl transition-all"
                                             />
                                         </div>
                                         <div>
@@ -144,7 +144,7 @@ export default function InductionFlow({ onComplete }: { onComplete: (calories: n
                                                 type="number"
                                                 value={metrics.height}
                                                 onChange={(e) => setMetrics({ ...metrics, height: parseInt(e.target.value) })}
-                                                className="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border-2 border-transparent focus:border-blue-600 focus:bg-white outline-none font-black text-xl transition-all shadow-inner"
+                                                className="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border-2 border-slate-100 dark:border-transparent focus:border-blue-600 focus:bg-white dark:focus:bg-white/10 outline-none font-black text-xl transition-all"
                                             />
                                         </div>
                                     </div>

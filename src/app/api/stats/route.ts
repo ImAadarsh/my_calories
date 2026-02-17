@@ -14,23 +14,37 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url);
     const type = searchParams.get('type') || 'weekly';
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
 
     try {
         const todayIST = formatInTimeZone(new Date(), TIMEZONE, 'yyyy-MM-dd');
-        const interval = type === 'weekly' ? 7 : 30;
 
-        const sql = `
+        let sql = `
             SELECT 
-                DATE(CONVERT_TZ(eaten_at, '+00:00', '+05:30')) as date, 
+                DATE(eaten_at) as date, 
                 SUM(calories) as total_calories 
             FROM meals 
-            WHERE user_id = ? 
-              AND DATE(CONVERT_TZ(eaten_at, '+00:00', '+05:30')) >= DATE_SUB(?, INTERVAL ? DAY)
-            GROUP BY date
-            ORDER BY date ASC
+            WHERE user_id = ?
         `;
+        let params: any[] = [session.user.id];
 
-        const stats = await query(sql, [session.user.id, todayIST, interval]);
+        if (type === 'daily') {
+            sql += " AND DATE(eaten_at) = ?";
+            params.push(todayIST);
+        } else if (type === 'custom' && startDate && endDate) {
+            sql += " AND DATE(eaten_at) BETWEEN ? AND ?";
+            params.push(startDate, endDate);
+        } else {
+            // Default to weekly (7 days) or handle 'weekly' explicitly
+            const interval = 7;
+            sql += " AND DATE(eaten_at) BETWEEN DATE_SUB(?, INTERVAL ? DAY) AND ?";
+            params.push(todayIST, interval, todayIST);
+        }
+
+        sql += " GROUP BY date ORDER BY date ASC";
+
+        const stats = await query(sql, params);
         return NextResponse.json(stats);
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 });

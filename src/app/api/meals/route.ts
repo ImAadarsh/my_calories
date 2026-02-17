@@ -51,17 +51,13 @@ export async function POST(req: Request) {
             }
         }
 
-        // Get current time in IST
-        const nowIST = formatInTimeZone(new Date(), TIMEZONE, 'yyyy-MM-dd HH:mm:ss');
-
         await query(
-            "INSERT INTO meals (user_id, food_name, description, calories, eaten_at, meal_type) VALUES (?, ?, ?, ?, ?, ?)",
+            "INSERT INTO meals (user_id, food_name, description, calories, eaten_at, meal_type) VALUES (?, ?, ?, ?, NOW(), ?)",
             [
                 session.user.id,
                 food_name,
                 description,
                 calories,
-                nowIST,
                 mealType
             ]
         );
@@ -94,9 +90,9 @@ export async function GET(req: Request) {
                 FROM (
                     SELECT * FROM meals 
                     WHERE user_id = ? 
-                    ORDER BY eaten_at DESC 
-                    LIMIT 10
-                ) as last_10
+                    ORDER BY id DESC 
+                    LIMIT 20
+                ) as last_20
             `;
             let params: any[] = [session.user.id];
 
@@ -111,12 +107,18 @@ export async function GET(req: Request) {
             return NextResponse.json(frequentMeals);
         }
 
-        let sql = "SELECT * FROM meals WHERE user_id = ?";
+        let sql = "SELECT id, user_id, food_name, description, calories, eaten_at, meal_type, image_url, TIME_FORMAT(eaten_at, '%h:%i %p') as time FROM meals WHERE user_id = ?";
         let params = [session.user.id];
 
         if (type === 'daily') {
-            sql += " AND DATE(CONVERT_TZ(eaten_at, '+00:00', '+05:30')) = ?";
-            params.push(todayIST);
+            const requestedDate = searchParams.get('date');
+            if (requestedDate) {
+                sql += " AND DATE(eaten_at) = ?";
+                params.push(requestedDate);
+            } else {
+                sql += " AND DATE(eaten_at) = ?";
+                params.push(todayIST);
+            }
         }
 
         const meals = await query(sql, params);
