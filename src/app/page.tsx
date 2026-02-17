@@ -3,32 +3,129 @@
 import { useSession, signIn, signOut } from "next-auth/react";
 import { useState, useEffect } from "react";
 import { Camera, Plus, BarChart3, History, LogOut, Utensils, Flame, User, Target, ChevronRight, Activity, Weight, Sparkles, Trash2, Edit, Save, X, Info } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { AreaChart, Area, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { useScroll, useTransform, useMotionValue, motion, AnimatePresence } from "framer-motion";
+import { AreaChart, Area, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell, PieChart, Pie } from 'recharts';
+import { useRef } from "react";
 import MealLogger from "@/components/MealLogger";
 import InductionFlow from "@/components/InductionFlow";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function Dashboard() {
   const { data: session, status } = useSession();
-  const [activeTab, setActiveTab] = useState<'daily' | 'stats' | 'profile'>('daily');
+  const [activeTab, setActiveTab] = useState<'daily' | 'stats' | 'reports' | 'profile'>('daily');
   const [meals, setMeals] = useState<any[]>([]);
   const [isLogging, setIsLogging] = useState(false);
   const [stats, setStats] = useState<any[]>([]);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [needsInduction, setNeedsInduction] = useState(false);
   const [selectedMeal, setSelectedMeal] = useState<any>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollY = useMotionValue(0);
+
+  const summaryScale = useTransform(scrollY, [0, 200], [1, 0.85]);
+  const summaryOpacity = useTransform(scrollY, [0, 200], [1, 0.8]);
+  const summaryY = useTransform(scrollY, [0, 200], [0, -20]);
   const [isEditingMeal, setIsEditingMeal] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editedMeal, setEditedMeal] = useState<any>(null);
+  const [subtractionMealId, setSubtractionMealId] = useState<number | null>(null);
   const [editedProfile, setEditedProfile] = useState<any>(null);
+  const [isAnalyzingDay, setIsAnalyzingDay] = useState(false);
+  const [dailyReport, setDailyReport] = useState<any>(null);
+  const [showAnalysisModal, setShowAnalysisModal] = useState(false);
+  const [selectedFeeling, setSelectedFeeling] = useState<string | null>(null);
+  const [isSavingReport, setIsSavingReport] = useState(false);
+  const [cumulativeData, setCumulativeData] = useState<any>(null);
+  const [selectedRange, setSelectedRange] = useState<'weekly' | 'monthly' | 'yearly'>('weekly');
+  const [isFetchingCumulative, setIsFetchingCumulative] = useState(false);
+  const [historicalReport, setHistoricalReport] = useState<any>(null);
+  const [historicalDate, setHistoricalDate] = useState(new Date().toISOString().split('T')[0]);
 
   useEffect(() => {
     if (session) {
       fetchUserProfile();
       fetchMeals();
       fetchStats();
+      fetchDailyReport();
+      fetchCumulativeData(selectedRange);
     }
-  }, [session]);
+  }, [session, selectedRange]);
+
+  const fetchCumulativeData = async (range: string) => {
+    setIsFetchingCumulative(true);
+    try {
+      const res = await fetch(`/api/reports?range=${range}`);
+      if (res.ok) {
+        const data = await res.json();
+        setCumulativeData(data);
+      }
+    } catch (e) {
+      console.error("Failed to fetch cumulative data", e);
+    } finally {
+      setIsFetchingCumulative(false);
+    }
+  };
+
+  const fetchHistoricalReport = async (date: string) => {
+    try {
+      const res = await fetch(`/api/reports?date=${date}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data) {
+          setHistoricalReport(JSON.parse(data.analysis_content));
+        } else {
+          setHistoricalReport(null);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to fetch historical report", e);
+    }
+  };
+
+  const fetchDailyReport = async () => {
+    try {
+      const res = await fetch('/api/reports');
+      if (res.ok) {
+        const data = await res.json();
+        if (data) {
+          setDailyReport(JSON.parse(data.analysis_content));
+          setSelectedFeeling(data.feeling);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to fetch daily report", e);
+    }
+  };
+
+
+
+  const handleAnalyzeDay = async () => {
+    if (meals.length === 0) return;
+    setIsAnalyzingDay(true);
+    setShowAnalysisModal(true);
+    // Analysis is now triggered on the backend during the save flow or pre-view if needed
+    // But user wants "In that I want the Nurtion and all the info" so we can generate it now if not exists
+  };
+
+  const saveDailyReport = async (feeling: string) => {
+    setIsSavingReport(true);
+    try {
+      const res = await fetch('/api/reports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ feeling })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setDailyReport(data.analysis);
+        setSelectedFeeling(feeling);
+      }
+    } catch (e) {
+      console.error("Failed to save report", e);
+    } finally {
+      setIsSavingReport(false);
+    }
+  };
 
   const fetchUserProfile = async () => {
     const res = await fetch('/api/user');
@@ -401,8 +498,18 @@ export default function Dashboard() {
   const calorieGoal = userProfile?.daily_calorie_goal || 2500;
   const progress = Math.min((totalCalories / calorieGoal) * 100, 100);
 
+  const isDinnerTime = (() => {
+    try {
+      const now = new Date();
+      const istDate = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+      return istDate.getHours() >= 19;
+    } catch (e) {
+      return false;
+    }
+  })();
+
   return (
-    <div className="flex flex-col min-h-screen bg-[#f8fafc] dark:bg-slate-950 pb-[100px]">
+    <div className="flex flex-col min-h-screen bg-[#f8fafc] dark:bg-slate-950 pb-[115px]">
       {/* Navbar Upper */}
       <header className="py-1.5 px-6 flex items-center justify-between sticky top-0 z-40 bg-white dark:bg-slate-950 border-b border-slate-100 dark:border-white/5 transition-all">
         <div className="flex items-center gap-4">
@@ -414,20 +521,16 @@ export default function Dashboard() {
             <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-slate-950" />
           </button>
           <div>
-            <div className="flex items-center gap-2">
-              <img src="/logo.png" className="w-4 h-4 rounded-md" alt="Logo" />
-              <h2 className="text-slate-900 dark:text-white font-black text-base font-display">Dashboard</h2>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <Activity size={10} className="text-green-500" />
-              <p className="text-[8px] text-slate-400 font-black uppercase tracking-widest tracking-[0.2em]">Connected Live</p>
-            </div>
+            <h2 className="text-slate-900 dark:text-white font-black text-base font-display leading-tight">Hey, {session.user?.name?.split(' ')[0]}!</h2>
           </div>
         </div>
-        <div className="flex gap-2">
-          <button onClick={() => setNeedsInduction(true)} className="p-2.5 bg-white dark:bg-white/5 text-slate-600 dark:text-slate-400 rounded-2xl border border-slate-100 dark:border-white/10 hover:bg-slate-50 transition-all">
-            <Target size={18} />
-          </button>
+        <div className="flex gap-2 items-center">
+          <ThemeToggle />
+          {!userProfile?.daily_calorie_goal && (
+            <button onClick={() => setNeedsInduction(true)} className="p-2.5 bg-white dark:bg-white/5 text-slate-600 dark:text-slate-400 rounded-2xl border border-slate-100 dark:border-white/10 hover:bg-slate-50 transition-all">
+              <Target size={18} />
+            </button>
+          )}
           <button onClick={() => signOut()} className="p-2.5 bg-red-50 text-red-500 rounded-2xl hover:bg-red-100 transition-all">
             <LogOut size={18} />
           </button>
@@ -435,7 +538,11 @@ export default function Dashboard() {
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto pt-4">
+      <main
+        ref={scrollRef}
+        onScroll={(e) => scrollY.set(e.currentTarget.scrollTop)}
+        className="flex-1 overflow-y-auto pt-4 scroll-smooth"
+      >
         <AnimatePresence mode="wait">
           {activeTab === 'daily' && (
             <motion.div
@@ -446,49 +553,76 @@ export default function Dashboard() {
               className="px-6 space-y-10"
             >
               {/* Premium Progress Card */}
-              <div className="relative group">
+              <motion.div
+                style={{ scale: summaryScale, opacity: summaryOpacity, y: summaryY }}
+                className="relative group sticky top-0 z-20 origin-top"
+              >
                 <div className="absolute inset-0 bg-blue-600 rounded-[3rem] blur-3xl opacity-20 group-hover:opacity-30 transition-opacity" />
-                <div className="bg-slate-900 rounded-[3rem] p-10 text-white relative overflow-hidden shadow-2xl">
+                <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-7 text-slate-900 dark:text-white relative overflow-hidden shadow-2xl border border-slate-100 dark:border-white/5">
                   {/* Decorative Elements */}
-                  <div className="absolute top-0 right-0 w-40 h-40 bg-blue-600 opacity-20 rounded-full blur-[60px] translate-x-1/2 -translate-y-1/2" />
-                  <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-600 opacity-20 rounded-full blur-[50px] -translate-x-1/2 translate-y-1/2" />
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600 opacity-20 rounded-full blur-[60px] translate-x-1/2 -translate-y-1/2" />
+                  <div className="absolute bottom-0 left-0 w-24 h-24 bg-purple-600 opacity-20 rounded-full blur-[50px] -translate-x-1/2 translate-y-1/2" />
 
-                  <div className="relative z-10 space-y-10">
+                  <div className="relative z-10 space-y-7">
                     <div className="flex justify-between items-start">
                       <div>
-                        <p className="text-white/50 text-xs font-black uppercase tracking-widest mb-2">Current Status</p>
+                        <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1.5">Current Status</p>
                         <div className="flex items-baseline gap-2">
-                          <h2 className="text-7xl font-black font-display leading-none tracking-tighter">{totalCalories}</h2>
-                          <span className="text-white/40 font-bold text-xl">kcal</span>
+                          <h2 className="text-6xl font-black font-display leading-none tracking-tighter text-slate-900 dark:text-white">{totalCalories}</h2>
+                          <span className="text-slate-400 font-bold text-lg">kcal</span>
                         </div>
                       </div>
-                      <div className="w-16 h-16 bg-white/10 rounded-[1.5rem] border border-white/10 flex items-center justify-center text-blue-400">
-                        <Flame size={32} className="animate-pulse" />
+                      <div className="w-14 h-14 bg-blue-600 text-white rounded-[1.25rem] shadow-lg shadow-blue-600/30 flex items-center justify-center">
+                        <Flame size={28} className="animate-pulse" />
                       </div>
                     </div>
 
-                    <div className="space-y-4">
-                      <div className="flex justify-between text-xs font-black uppercase tracking-[0.15em] text-white/40">
+                    <div className="space-y-3">
+                      <div className="flex justify-between text-xs font-black uppercase tracking-[0.15em] text-slate-400">
                         <span>Energy Burn</span>
                         <span>{Math.round(progress)}% of daily</span>
                       </div>
-                      <div className="h-4 bg-white/5 rounded-full overflow-hidden p-1 border border-white/5">
+                      <div className="h-4 bg-slate-50 dark:bg-white/5 rounded-full overflow-hidden p-1 border border-slate-100 dark:border-white/5">
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: `${progress}%` }}
                           transition={{ duration: 1, ease: "circOut" }}
-                          className="h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.6)]"
+                          className="h-full bg-gradient-to-r from-blue-600 to-blue-400 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.3)]"
                         />
                       </div>
                     </div>
 
-                    <div className="pt-2 flex items-center gap-1.5 border-t border-white/5">
-                      <p className="text-white/40 text-[10px] font-black uppercase tracking-widest">Optimized Target:</p>
-                      <p className="text-white text-[11px] font-black">{calorieGoal} kcal</p>
+                    {/* Optimized Target - Catchy Style */}
+                    <div className="pt-5 border-t border-slate-100 dark:border-white/5 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 bg-blue-50 dark:bg-blue-600/10 rounded-lg flex items-center justify-center">
+                          <Target size={12} className="text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="text-slate-400 text-[8px] font-black uppercase tracking-widest leading-none mb-1">Target Intake</p>
+                          <p className="text-slate-900 dark:text-white text-xs font-black tracking-tight">{calorieGoal} <span className="text-[10px] text-slate-400">kcal</span></p>
+                        </div>
+                      </div>
+                      <div className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest ${progress > 100 ? 'bg-red-100 text-red-600' : 'bg-blue-50 dark:bg-blue-600/20 text-blue-600'}`}>
+                        {progress > 100 ? 'Over Limit' : 'On Track'}
+                      </div>
                     </div>
+
+                    {(isDinnerTime || dailyReport) && (
+                      <div className="pt-3 mt-1">
+                        <button
+                          onClick={handleAnalyzeDay}
+                          disabled={meals.length === 0}
+                          className={`w-full py-3 ${dailyReport ? 'bg-slate-100 dark:bg-white/5 text-slate-500' : 'bg-blue-600 text-white shadow-xl shadow-blue-600/20'} rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 group disabled:opacity-50`}
+                        >
+                          <Sparkles size={14} className={dailyReport ? "" : "text-blue-200 group-hover:rotate-12 transition-transform"} />
+                          {dailyReport ? 'View Your Daily Report' : 'Analyze My Day'}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
-              </div>
+              </motion.div>
 
               {/* Meal List Section */}
               <div className="space-y-6">
@@ -509,32 +643,42 @@ export default function Dashboard() {
                       <p className="text-xs text-slate-300 mt-1 uppercase tracking-widest font-black">Waiting for your first snap</p>
                     </div>
                   ) : (
-                    meals.map((meal, i) => (
-                      <motion.div
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.1 }}
-                        onClick={() => setSelectedMeal(meal)}
-                        key={i}
-                        className="flex gap-5 p-6 bg-white rounded-[2.5rem] items-center border border-slate-100 shadow-sm hover:shadow-xl hover:scale-[1.01] transition-all group cursor-pointer"
-                      >
-                        <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 font-black group-hover:bg-blue-600 group-hover:text-white transition-all">
-                          {meal.calories}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-[9px] font-black uppercase px-2 py-0.5 bg-blue-50 text-blue-600 rounded-lg tracking-wider">
-                              {meal.meal_type || 'snack'}
-                            </span>
+                    meals.map((meal, i) => {
+                      const mealColors = (() => {
+                        switch (meal.meal_type?.toLowerCase()) {
+                          case 'breakfast': return 'bg-blue-50/50 text-blue-600 border-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-900/30';
+                          case 'lunch': return 'bg-emerald-50/50 text-emerald-600 border-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-900/30';
+                          case 'dinner': return 'bg-indigo-50/50 text-indigo-600 border-indigo-100 dark:bg-indigo-900/20 dark:text-indigo-400 dark:border-indigo-900/30';
+                          case 'snack': return 'bg-amber-50/50 text-amber-600 border-amber-100 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-900/30';
+                          default: return 'bg-slate-50 text-slate-600 border-slate-100 dark:bg-white/5 dark:text-slate-400 dark:border-white/10';
+                        }
+                      })();
+
+                      return (
+                        <motion.div
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: i * 0.1 }}
+                          onClick={() => setSelectedMeal(meal)}
+                          key={i}
+                          className={`flex gap-4 p-4 rounded-[2rem] items-center border shadow-sm hover:shadow-md hover:scale-[1.01] transition-all group cursor-pointer ${mealColors} bg-white dark:bg-slate-900`}
+                        >
+                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black group-hover:scale-110 transition-transform ${mealColors.split(' ')[0]} ${mealColors.split(' ')[1]}`}>
+                            {meal.calories}
                           </div>
-                          <h4 className="font-black text-slate-900 truncate leading-none mb-1 text-lg">{meal.food_name}</h4>
-                          <p className="text-xs text-slate-400 font-bold tracking-tight line-clamp-2">{meal.description}</p>
-                        </div>
-                        <div className="bg-slate-50 p-2 rounded-xl group-hover:bg-blue-50 transition-colors">
-                          <ChevronRight size={16} className="text-slate-300 group-hover:text-blue-600" />
-                        </div>
-                      </motion.div>
-                    ))
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-lg tracking-wider ${mealColors.split(' ')[0]} ${mealColors.split(' ')[1]}`}>
+                                {meal.meal_type || 'snack'}
+                              </span>
+                              <p className="text-[10px] font-bold text-slate-400">{meal.time || 'Today'}</p>
+                            </div>
+                            <h4 className="text-sm font-black text-slate-900 dark:text-white truncate uppercase tracking-tight">{meal.food_name}</h4>
+                            <p className="text-[10px] text-slate-400 font-medium truncate italic">"{meal.description}"</p>
+                          </div>
+                        </motion.div>
+                      );
+                    })
                   )}
                 </div>
               </div>
@@ -593,6 +737,48 @@ export default function Dashboard() {
                 </div>
                 <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600 opacity-10 rounded-full blur-[100px] translate-x-1/2 -translate-y-1/2" />
               </div>
+              <div className="bg-white dark:bg-slate-900 rounded-[3rem] p-8 border border-slate-100 dark:border-white/5 shadow-xl">
+                <h4 className="font-black text-lg text-slate-900 dark:text-white mb-6 uppercase tracking-widest flex items-center gap-2">
+                  <Utensils size={18} className="text-blue-600" /> Meal Breakdown
+                </h4>
+                <div className="h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={[
+                          { name: 'Breakfast', value: meals.filter(m => m.meal_type === 'breakfast').reduce((a, b) => a + b.calories, 0) },
+                          { name: 'Lunch', value: meals.filter(m => m.meal_type === 'lunch').reduce((a, b) => a + b.calories, 0) },
+                          { name: 'Dinner', value: meals.filter(m => m.meal_type === 'dinner').reduce((a, b) => a + b.calories, 0) },
+                          { name: 'Snacks', value: meals.filter(m => m.meal_type === 'snack').reduce((a, b) => a + b.calories, 0) },
+                        ].filter(d => d.value > 0)}
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {['#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe'].map((color, index) => (
+                          <Cell key={`cell-${index}`} fill={color} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '1rem', color: '#fff' }}
+                        itemStyle={{ color: '#fff', fontSize: '10px', fontWeight: 'bold' }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="grid grid-cols-2 gap-4 mt-6">
+                  {['breakfast', 'lunch', 'dinner', 'snack'].map((type, i) => (
+                    <div key={type} className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: ['#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe'][i] }} />
+                      <span className="text-[10px] font-black uppercase text-slate-400">{type}</span>
+                      <span className="text-[10px] font-black text-slate-900 dark:text-white ml-auto">
+                        {meals.filter(m => m.meal_type === type).reduce((a, b) => a + b.calories, 0)} kcal
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
@@ -605,6 +791,180 @@ export default function Dashboard() {
                     {stats.length > 0 ? Math.round(stats.reduce((a, b) => a + b.total_calories, 0) / stats.length) : 0}
                   </p>
                 </div>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'reports' && (
+            <motion.div
+              key="reports"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="px-6 space-y-8"
+            >
+              <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-2xl">
+                {(['weekly', 'monthly', 'yearly'] as const).map((r) => (
+                  <button
+                    key={r}
+                    onClick={() => setSelectedRange(r)}
+                    className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${selectedRange === r ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-sm' : 'text-slate-400'}`}
+                  >
+                    {r}
+                  </button>
+                ))}
+              </div>
+
+              {cumulativeData && (
+                <div className="bg-slate-900 rounded-[2.5rem] p-7 text-white shadow-2xl relative overflow-hidden">
+                  <div className="relative z-10 space-y-6">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="text-blue-400 text-[10px] font-black uppercase tracking-[0.2em] mb-2">Cumulative Stats</p>
+                        <div className="flex items-baseline gap-2">
+                          <h2 className="text-5xl font-black font-display leading-none tracking-tighter">
+                            {Math.round(cumulativeData.summary?.total_calories || 0).toLocaleString()}
+                          </h2>
+                          <span className="text-slate-400 font-bold text-lg">total kcal</span>
+                        </div>
+                      </div>
+                      <div className="w-12 h-12 bg-blue-600/20 rounded-xl flex items-center justify-center border border-blue-600/30">
+                        <Activity className="text-blue-400" size={24} />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-white/5 p-4 rounded-2xl border border-white/5 space-y-1">
+                        <p className="text-slate-500 text-[8px] font-black uppercase tracking-widest leading-none">Avg Calories</p>
+                        <p className="text-xl font-black text-white">{Math.round(cumulativeData.summary?.avg_calories || 0)} <span className="text-[10px] text-slate-500">kcal</span></p>
+                        <div className="w-full bg-white/5 h-1 rounded-full overflow-hidden">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: '65%' }}
+                            className="h-full bg-blue-500"
+                          />
+                        </div>
+                      </div>
+                      <div className="bg-white/5 p-4 rounded-2xl border border-white/5 space-y-1">
+                        <p className="text-slate-500 text-[8px] font-black uppercase tracking-widest leading-none">Days Tracked</p>
+                        <p className="text-xl font-black text-white">{cumulativeData.summary?.days_logged || 0} <span className="text-[10px] text-slate-500">days</span></p>
+                        <div className="flex gap-1 mt-1">
+                          {[1, 2, 3, 4, 5].map(i => <div key={i} className={`w-1 h-1 rounded-full ${i <= ((cumulativeData.summary?.days_logged || 0) % 5) ? 'bg-blue-400' : 'bg-white/10'}`} />)}
+                        </div>
+                      </div>
+                      <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                        <p className="text-slate-500 text-[8px] font-black uppercase tracking-widest mb-1">Total Protein</p>
+                        <p className="text-xl font-black text-emerald-400">{Math.round(cumulativeData.summary?.total_protein || 0)}g</p>
+                      </div>
+                      <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                        <p className="text-slate-500 text-[8px] font-black uppercase tracking-widest mb-1">Total Carbs</p>
+                        <p className="text-xl font-black text-amber-400">{Math.round(cumulativeData.summary?.total_carbs || 0)}g</p>
+                      </div>
+                    </div>
+
+                    <div className="pt-4 h-48 w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={cumulativeData.trend}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                          <XAxis dataKey="report_date" hide />
+                          <Tooltip
+                            content={({ active, payload }) => {
+                              if (active && payload && payload.length) {
+                                return (
+                                  <div className="glass-dark p-4 rounded-2xl border-white/10 shadow-2xl space-y-2">
+                                    <p className="text-[10px] font-black text-white/50">{new Date(payload[0].payload.report_date).toLocaleDateString()}</p>
+                                    <div className="space-y-1">
+                                      {payload.map((p: any) => (
+                                        <div key={p.name} className="flex items-center justify-between gap-4">
+                                          <span className="text-[9px] font-black uppercase text-slate-400">{p.name}</span>
+                                          <span className="text-xs font-black text-white" style={{ color: p.color }}>{p.value}{p.name === 'Calories' ? 'kcal' : 'g'}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
+                          />
+                          <Bar name="Calories" dataKey="total_calories" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                          <Bar name="Protein" dataKey="total_protein" fill="#10b981" radius={[4, 4, 0, 0]} />
+                          <Bar name="Carbs" dataKey="total_carbs" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                          <Bar name="Fats" dataKey="total_fats" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-2 pt-2">
+                      {[
+                        { label: 'Energy', color: 'bg-blue-600' },
+                        { label: 'Protein', color: 'bg-emerald-500' },
+                        { label: 'Carbs', color: 'bg-amber-500' },
+                        { label: 'Fats', color: 'bg-red-500' }
+                      ].map(item => (
+                        <div key={item.label} className="flex items-center gap-1.5">
+                          <div className={`w-1.5 h-1.5 rounded-full ${item.color}`} />
+                          <span className="text-[8px] font-black uppercase text-slate-500">{item.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="absolute top-0 right-0 w-48 h-48 bg-blue-600 opacity-10 rounded-full blur-[80px]" />
+                </div>
+              )}
+
+              <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-7 border border-slate-100 dark:border-white/5 shadow-xl">
+                <div className="flex items-center justify-between mb-6">
+                  <h4 className="font-black text-slate-900 dark:text-white uppercase tracking-widest flex items-center gap-2">
+                    <History size={18} className="text-blue-600" /> Historical Reports
+                  </h4>
+                  <input
+                    type="date"
+                    value={historicalDate}
+                    onChange={(e) => {
+                      setHistoricalDate(e.target.value);
+                      fetchHistoricalReport(e.target.value);
+                    }}
+                    className="p-2 bg-slate-50 dark:bg-white/5 rounded-xl text-[10px] font-black tracking-tight dark:text-white outline-none"
+                  />
+                </div>
+
+                {historicalReport ? (
+                  <div className="space-y-6">
+                    <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-2xl">
+                      <p className="text-slate-600 dark:text-slate-300 text-xs italic line-clamp-3">"{historicalReport.summary}"</p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      {historicalReport.table?.slice(0, 4).map((row: any, i: number) => (
+                        <div key={i} className="flex flex-col gap-0.5 bg-slate-50 dark:bg-white/5 p-3 rounded-xl border border-slate-100 dark:border-white/5">
+                          <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{row.nutrient}</span>
+                          <span className="text-sm font-black text-slate-900 dark:text-white">{row.intake} <span className="text-[9px] text-slate-400">{row.unit}</span></span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="bg-blue-600/5 dark:bg-blue-600/10 p-5 rounded-3xl border border-blue-600/10 flex items-center justify-between group cursor-pointer hover:bg-blue-600 hover:text-white transition-all"
+                      onClick={() => {
+                        setDailyReport(historicalReport);
+                        setShowAnalysisModal(true);
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/20">
+                          <Sparkles size={18} />
+                        </div>
+                        <p className="text-[11px] font-black uppercase tracking-widest">Full AI Analysis Report</p>
+                      </div>
+                      <ChevronRight size={18} className="opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="py-12 flex flex-col items-center gap-2">
+                    <History size={32} className="text-slate-200" />
+                    <p className="text-slate-400 text-[10px] font-black uppercase">No report for this date</p>
+                  </div>
+                )}
               </div>
             </motion.div>
           )}
@@ -762,34 +1122,42 @@ export default function Dashboard() {
       </main>
 
       {/* Tab Bar Bottom */}
-      <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto h-[52px] bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-white/5 px-10 flex items-center justify-between z-50">
+      <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto h-[70px] bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-t border-slate-100 dark:border-white/5 px-6 flex items-center justify-between z-50 pb-2">
         <button
-          onClick={() => setActiveTab('daily')}
-          className={`relative p-3 transition-all ${activeTab === 'daily' ? 'text-blue-600' : 'text-slate-400'}`}
+          onClick={() => setIsLogging(true)}
+          className="relative flex flex-col items-center gap-1.5 group"
         >
-          <Utensils size={22} />
-          {activeTab === 'daily' && <motion.div layoutId="tab-active" className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-blue-600 rounded-full" />}
+          <div className="w-11 h-11 bg-blue-600 text-white rounded-2xl shadow-lg shadow-blue-600/30 flex items-center justify-center group-hover:scale-110 group-active:scale-95 transition-all">
+            <Plus size={22} className="group-hover:rotate-90 transition-transform duration-500" />
+          </div>
+          <span className="text-[9px] font-black uppercase tracking-widest text-blue-600/60 group-hover:text-blue-600 transition-colors">Add</span>
         </button>
 
-        {/* Integrated Floating Action Button */}
-        <div className="relative">
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={() => setIsLogging(true)}
-            className="w-9 h-9 bg-blue-600 text-white rounded-xl shadow-lg flex items-center justify-center transition-all group relative overflow-hidden"
-          >
-            <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl" />
-            <Plus size={20} className="group-hover:rotate-90 transition-transform duration-500" />
-          </motion.button>
-        </div>
+        <button
+          onClick={() => setActiveTab('daily')}
+          className={`relative flex flex-col items-center gap-1.5 px-4 py-2 rounded-2xl transition-all ${activeTab === 'daily' ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20' : 'text-slate-400'}`}
+        >
+          <Utensils size={20} className={activeTab === 'daily' ? 'drop-shadow-[0_0_8px_rgba(79,70,229,0.5)]' : ''} />
+          <span className="text-[9px] font-black uppercase tracking-widest">Home</span>
+          {activeTab === 'daily' && <motion.div layoutId="tab-active" className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-indigo-600 rounded-full shadow-[0_0_10px_rgba(79,70,229,0.5)]" />}
+        </button>
 
         <button
           onClick={() => setActiveTab('stats')}
-          className={`relative p-3 transition-all ${activeTab === 'stats' ? 'text-blue-600' : 'text-slate-400'}`}
+          className={`relative flex flex-col items-center gap-1.5 px-4 py-2 rounded-2xl transition-all ${activeTab === 'stats' ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20' : 'text-slate-400'}`}
         >
-          <BarChart3 size={22} />
-          {activeTab === 'stats' && <motion.div layoutId="tab-active" className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-blue-600 rounded-full" />}
+          <BarChart3 size={20} className={activeTab === 'stats' ? 'drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]' : ''} />
+          <span className="text-[9px] font-black uppercase tracking-widest">Stats</span>
+          {activeTab === 'stats' && <motion.div layoutId="tab-active" className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-emerald-600 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]" />}
+        </button>
+
+        <button
+          onClick={() => setActiveTab('reports')}
+          className={`relative flex flex-col items-center gap-1.5 px-4 py-2 rounded-2xl transition-all ${activeTab === 'reports' ? 'text-purple-600 bg-purple-50 dark:bg-purple-900/20' : 'text-slate-400'}`}
+        >
+          <History size={20} className={activeTab === 'reports' ? 'drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]' : ''} />
+          <span className="text-[9px] font-black uppercase tracking-widest">Reports</span>
+          {activeTab === 'reports' && <motion.div layoutId="tab-active" className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-purple-600 rounded-full shadow-[0_0_10px_rgba(168,85,247,0.5)]" />}
         </button>
       </nav>
 
@@ -797,8 +1165,9 @@ export default function Dashboard() {
       <AnimatePresence>
         {isLogging && (
           <MealLogger
-            onClose={() => setIsLogging(false)}
+            onClose={() => { setIsLogging(false); setSubtractionMealId(null); }}
             onComplete={fetchMeals}
+            subtractionMealId={subtractionMealId || undefined}
           />
         )}
       </AnimatePresence>
@@ -806,6 +1175,156 @@ export default function Dashboard() {
       <AnimatePresence>
         {needsInduction && (
           <InductionFlow onComplete={handleInductionComplete} />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showAnalysisModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md"
+            onClick={() => !isSavingReport && setShowAnalysisModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="w-full max-w-lg bg-white dark:bg-slate-950 rounded-[3rem] p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setShowAnalysisModal(false)}
+                className="absolute top-6 right-6 p-2 bg-slate-100 dark:bg-white/5 rounded-full hover:bg-slate-200 transition-all text-slate-500"
+              >
+                <X size={20} />
+              </button>
+
+              <div className="space-y-8">
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-blue-600/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Sparkles className="text-blue-600" size={32} />
+                  </div>
+                  <h3 className="text-2xl font-black text-slate-900 dark:text-white font-display">Daily Intelligence</h3>
+                  <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">AI report</p>
+                </div>
+
+                {!dailyReport ? (
+                  <div className="space-y-8 py-4">
+                    <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-2xl border border-amber-100 dark:border-amber-900/30 flex items-start gap-3">
+                      <Info className="text-amber-600 shrink-0 mt-0.5" size={18} />
+                      <p className="text-amber-800 dark:text-amber-200 text-xs font-bold leading-relaxed">
+                        Generate this report after your last meal, as it can only be generated once for today.
+                      </p>
+                    </div>
+
+                    <div className="text-center space-y-4">
+                      <p className="text-slate-600 dark:text-slate-400 font-medium">How are you feeling about your nutrition today?</p>
+                      <div className="grid grid-cols-3 gap-3">
+                        {[
+                          { emoji: "🤩", label: "Proud" },
+                          { emoji: "😊", label: "Energetic" },
+                          { emoji: "⚖️", label: "Balanced" },
+                          { emoji: "🥦", label: "Healthy" },
+                          { emoji: "😌", label: "Relieved" },
+                          { emoji: "🤔", label: "Mindful" },
+                          { emoji: "😴", label: "Tired" },
+                          { emoji: "🥵", label: "Full" },
+                          { emoji: "🍕", label: "Indulgent" }
+                        ].map((f) => (
+                          <button
+                            key={f.label}
+                            onClick={() => saveDailyReport(f.label)}
+                            disabled={isSavingReport}
+                            className="p-4 bg-slate-50 dark:bg-white/5 rounded-2xl hover:bg-blue-600 hover:text-white transition-all flex flex-col items-center gap-1 group"
+                          >
+                            <span className="text-2xl group-hover:scale-125 transition-transform">{f.emoji}</span>
+                            <span className="text-[10px] font-black uppercase tracking-tighter text-slate-500 dark:text-slate-400 group-hover:text-white/80">{f.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    {isSavingReport && (
+                      <div className="flex flex-col items-center gap-4 py-8">
+                        <div className="w-12 h-12 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
+                        <p className="font-black text-slate-900 dark:text-white animate-pulse">Consulting AI Dietitian...</p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                    <div className="p-6 bg-slate-900 rounded-[2rem] text-white overflow-hidden relative">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600 opacity-20 rounded-full blur-[60px]" />
+                      <p className="text-blue-400 text-[10px] font-black uppercase tracking-[0.2em] mb-3 relative z-10">AI Synthesis</p>
+                      <p className="text-lg font-bold leading-relaxed relative z-10">{dailyReport.summary}</p>
+                    </div>
+
+                    <div className="overflow-hidden rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-sm overflow-x-auto">
+                      <table className="w-full text-left border-collapse min-w-[300px]">
+                        <thead>
+                          <tr className="bg-slate-50 dark:bg-white/5">
+                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400">Nutrient</th>
+                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Intake</th>
+                            <th className="px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Target</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+                          {dailyReport.table?.map((row: any, i: number) => (
+                            <tr key={i} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                              <td className="px-4 py-4 font-bold text-slate-900 dark:text-white text-sm">{row.nutrient}</td>
+                              <td className="px-4 py-4 text-right whitespace-nowrap">
+                                <span className="text-blue-600 font-black text-sm">{row.intake}</span>
+                                <span className="text-[10px] text-slate-400 ml-1">{row.unit}</span>
+                              </td>
+                              <td className="px-4 py-4 text-right text-slate-400 text-xs font-bold whitespace-nowrap">{row.target} {row.unit}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-3">
+                      {dailyReport.metrics?.map((m: any, i: number) => (
+                        <div key={i} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5">
+                          <div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{m.label}</p>
+                            <p className="text-sm font-black text-slate-900 dark:text-white">{m.value}</p>
+                          </div>
+                          <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${m.status === 'Positive' || m.status === 'Good' || m.status === 'Optimized'
+                            ? 'bg-green-100 text-green-600'
+                            : 'bg-orange-100 text-orange-600'
+                            }`}>
+                            {m.status}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="p-6 bg-blue-50 dark:bg-blue-600/10 rounded-[2rem] border-2 border-blue-600/10">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Info size={16} className="text-blue-600" />
+                        <p className="text-blue-600 text-[10px] font-black uppercase tracking-widest">Actionable Advice</p>
+                      </div>
+                      <p className="text-slate-700 dark:text-blue-100 font-bold text-sm leading-relaxed">{dailyReport.advice}</p>
+                    </div>
+
+                    <div className="flex items-center justify-center gap-3 py-4 border-t border-slate-100 dark:border-white/5">
+                      <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">You felt:</p>
+                      <span className="px-4 py-2 bg-blue-600 text-white rounded-full text-xs font-black shadow-lg shadow-blue-600/20">{selectedFeeling}</span>
+                    </div>
+
+                    <button
+                      onClick={() => setShowAnalysisModal(false)}
+                      className="w-full py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-xl transition-all active:scale-95"
+                    >
+                      Close Report
+                    </button>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
 
@@ -828,6 +1347,13 @@ export default function Dashboard() {
             >
               <div className="w-12 h-1 bg-slate-200 dark:bg-white/10 rounded-full mx-auto mb-8" />
 
+              <button
+                onClick={() => setSelectedMeal(null)}
+                className="absolute top-5 right-5 p-2.5 bg-slate-50 dark:bg-white/5 rounded-2xl hover:bg-slate-100 dark:hover:bg-white/10 transition-all text-slate-500 z-10"
+              >
+                <X size={18} />
+              </button>
+
               <div className="space-y-6">
                 {!isEditingMeal ? (
                   <>
@@ -839,10 +1365,10 @@ export default function Dashboard() {
                             {selectedMeal.meal_type || 'snack'}
                           </span>
                         </div>
-                        <h3 className="text-3xl font-black text-slate-900 dark:text-white font-display leading-tight">{selectedMeal.food_name}</h3>
+                        <h3 className="text-2xl font-black text-slate-900 dark:text-white font-display leading-tight">{selectedMeal.food_name}</h3>
                       </div>
                       <div className="px-5 py-3 bg-blue-50 dark:bg-blue-600/10 rounded-2xl">
-                        <p className="text-2xl font-black text-blue-600 dark:text-blue-400">{selectedMeal.calories}<span className="text-xs ml-1">kcal</span></p>
+                        <p className="text-xl font-black text-blue-600 dark:text-blue-400">{selectedMeal.calories}<span className="text-[10px] ml-1">kcal</span></p>
                       </div>
                     </div>
 
@@ -858,21 +1384,32 @@ export default function Dashboard() {
                           setEditedMeal(selectedMeal);
                           setIsEditingMeal(true);
                         }}
-                        className="flex-1 py-5 bg-slate-100 dark:bg-white/5 text-slate-900 dark:text-white font-black rounded-2xl flex items-center justify-center gap-2 hover:bg-slate-200 transition-all"
+                        className="flex-1 py-4 bg-slate-100 dark:bg-white/5 text-slate-900 dark:text-white font-black rounded-2xl flex items-center justify-center gap-2 hover:bg-slate-200 transition-all text-xs"
                       >
-                        <Edit size={18} /> Edit
+                        <Edit size={16} /> Edit
                       </button>
                       <button
                         onClick={() => handleDeleteMeal(selectedMeal.id)}
-                        className="flex-1 py-5 bg-red-50 dark:bg-red-500/10 text-red-600 font-black rounded-2xl flex items-center justify-center gap-2 hover:bg-red-100 transition-all"
+                        className="flex-1 py-4 bg-red-50 dark:bg-red-500/10 text-red-600 font-black rounded-2xl flex items-center justify-center gap-2 hover:bg-red-100 transition-all text-xs"
                       >
-                        <Trash2 size={18} /> Delete
+                        <Trash2 size={16} /> Delete
                       </button>
                     </div>
 
                     <button
+                      onClick={() => {
+                        setSubtractionMealId(selectedMeal.id);
+                        setSelectedMeal(null);
+                        setIsLogging(true);
+                      }}
+                      className="w-full py-4 bg-orange-50 dark:bg-orange-500/10 text-orange-600 font-black rounded-2xl flex items-center justify-center gap-2 hover:bg-orange-100 transition-all border border-orange-200 dark:border-orange-500/20 text-xs"
+                    >
+                      <Camera size={16} /> Subtract Leftovers
+                    </button>
+
+                    <button
                       onClick={() => setSelectedMeal(null)}
-                      className="w-full py-5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black rounded-2xl hover:scale-[1.02] active:scale-95 transition-all shadow-xl"
+                      className="w-full py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black rounded-2xl hover:scale-[1.02] active:scale-95 transition-all shadow-xl text-xs"
                     >
                       Done
                     </button>

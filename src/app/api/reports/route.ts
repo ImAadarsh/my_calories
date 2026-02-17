@@ -1,0 +1,123 @@
+import { NextResponse } from 'next/server';
+import { getServerSession } from "next-auth/next";
+import { query } from '@/lib/db';
+import { authOptions } from '@/lib/auth';
+import { analyzeDay } from '@/lib/gemini';
+import { formatInTimeZone } from 'date-fns-tz';
+
+const TIMEZONE = 'Asia/Kolkata';
+
+export async function GET(req: Request) {
+    const session = await getServerSession(authOptions) as any;
+    if (!session || !session.user || !session.user.id) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    try {
+        const { searchParams } = new URL(req.url);
+        const requestedDate = searchParams.get('date');
+        const range = searchParams.get('range'); // 'weekly', 'monthly', 'yearly'
+
+        if (range) {
+            let dateFilter = "";
+            if (range === 'weekly') dateFilter = "report_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)";
+            else if (range === 'monthly') dateFilter = "report_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)";
+            else if (range === 'yearly') dateFilter = "report_date >= DATE_SUB(CURDATE(), INTERVAL 365 DAY)";
+
+            const aggregated = await query(
+                `SELECT 
+                    SUM(total_calories) as total_calories,
+                    AVG(total_calories) as avg_calories,
+                    SUM(total_protein) as total_protein,
+                    SUM(total_carbs) as total_carbs,
+                    SUM(total_fats) as total_fats,
+                    COUNT(*) as days_logged
+                 FROM daily_reports 
+                 WHERE user_id = ? AND ${dateFilter}`,
+                [session.user.id]
+            ) as any[];
+
+            const dailyTrend = await query(
+                `SELECT report_date, total_calories, total_protein, total_carbs, total_fats, feeling FROM daily_reports 
+                 WHERE user_id = ? AND ${dateFilter} 
+                 ORDER BY report_date ASC`,
+                [session.user.id]
+            ) as any[];
+
+            return NextResponse.json({
+                summary: aggregated[0],
+                trend: dailyTrend
+            });
+        }
+
+        const targetDate = requestedDate || formatInTimeZone(new Date(), TIMEZONE, 'yyyy-MM-dd');
+        const existingReport = await query(
+            "SELECT * FROM daily_reports WHERE user_id = ? AND report_date = ?",
+            [session.user.id, targetDate]
+        ) as any[];
+
+        return NextResponse.json(existingReport[0] || null);
+    } catch (error: any) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+}
+
+export async function POST(req: Request) {
+    const session = await getServerSession(authOptions) as any;
+    if (!session || !session.user || !session.user.id) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    try {
+        const { feeling } = await req.json();
+        const todayIST = formatInTimeZone(new Date(), TIMEZONE, 'yyyy-MM-dd');
+
+        // Check if report already exists
+        const existing = await query(
+            "SELECT id FROM daily_reports WHERE user_id = ? AND report_date = ?",
+            [session.user.id, todayIST]
+        ) as any[];
+
+        if (existing.length > 0) {
+            return NextResponse.json({ error: "Report already generated for today" }, { status: 400 });
+        }
+
+        // Get today's meals
+        const meals = await query(
+            "SELECT * FROM meals WHERE user_id = ? AND DATE(CONVERT_TZ(eaten_at, '+00:00', '+05:30')) = ?",
+            [session.user.id, todayIST]
+        ) as any[];
+
+        if (meals.length === 0) {
+            return NextResponse.json({ error: "No meals logged today to analyze" }, { status: 400 });
+        }
+
+        // Get user profile for goal context
+        const profile = await query("SELECT * FROM users WHERE id = ?", [session.user.id]) as any[];
+
+        // Generate AI analysis
+        const analysis = await analyzeDay(meals, profile[0]);
+
+        // Save report with metrics in dedicated columns
+        await query(
+            `INSERT INTO daily_reports 
+            (user_id, report_date, analysis_content, feeling, total_calories, total_protein, total_carbs, total_fats) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+                session.user.id,
+                todayIST,
+                JSON.stringify(analysis),
+                feeling,
+                analysis.stats?.calories || 0,
+                analysis.stats?.protein || 0,
+                analysis.stats?.carbs || 0,
+                analysis.stats?.fats || 0
+            ]
+        );
+
+        return NextResponse.json({ status: 'success', analysis });
+    } catch (error: any) {
+        console.error('Report error:', error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+}
