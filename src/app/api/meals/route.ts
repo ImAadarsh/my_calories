@@ -133,7 +133,7 @@ export async function GET(req: Request) {
             return NextResponse.json(frequentMeals);
         }
 
-        let sql = "SELECT id, user_id, food_name, description, calories, protein, carbs, fats, eaten_at, meal_type, image_url, TIME_FORMAT(eaten_at, '%h:%i %p') as time FROM meals WHERE user_id = ?";
+        let sql = "SELECT id, user_id, food_name, description, calories, protein, carbs, fats, eaten_at, meal_type, TIME_FORMAT(eaten_at, '%h:%i %p') as time FROM meals WHERE user_id = ?";
         let params = [session.user.id];
 
         if (type === 'daily') {
