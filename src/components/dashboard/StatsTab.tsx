@@ -88,7 +88,7 @@ export function StatsTab({
             {/* Nutrient Profile Section (Moved to TOP) */}
             <div className="bg-slate-900 rounded-[3rem] p-8 text-white shadow-2xl space-y-8">
                 <h4 className="font-black text-lg text-cream/90 mb-6 uppercase tracking-widest flex items-center gap-2">
-                    <Activity size={18} className="text-emerald-400" /> Nutrient Profile
+                    <Activity size={18} className="text-emerald-400" /> Nutrient Profile <span className="text-[8px] text-white/30">(Daily Avg)</span>
                 </h4>
 
                 <div className="grid grid-cols-3 gap-4">
@@ -179,7 +179,7 @@ export function StatsTab({
 
             <div className="bg-white dark:bg-slate-900 rounded-[3rem] p-8 border border-slate-100 dark:border-white/5 shadow-xl">
                 <h4 className="font-black text-lg text-slate-900 dark:text-cream mb-6 uppercase tracking-widest flex items-center gap-2">
-                    <Utensils size={18} className="text-blue-600 dark:text-gold" /> Meal Breakdown
+                    <Utensils size={18} className="text-blue-600 dark:text-gold" /> Meal Breakdown <span className="text-[8px] text-slate-400 dark:text-white/20">(Daily Avg)</span>
                 </h4>
                 <div className="h-64 w-full">
                     <ResponsiveContainer width="100%" height="100%">
@@ -210,7 +210,7 @@ export function StatsTab({
                             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: ['#D4AF37', '#E5C100', '#F9E27E', '#FCF3CF'][i] }} />
                             <span className="text-[10px] font-black uppercase text-slate-400 dark:text-cream/50">{type}</span>
                             <span className="text-[10px] font-black text-slate-900 dark:text-cream ml-auto">
-                                {Math.round(breakdown.find(b => b.meal_type === type)?.calories || 0)} kcal
+                                {Math.round((breakdown.find(b => b.meal_type === type)?.calories || 0) / (processedStats.length || 1))} kcal
                             </span>
                         </div>
                     ))}

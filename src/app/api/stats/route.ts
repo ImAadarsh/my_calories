@@ -39,10 +39,20 @@ export async function GET(req: Request) {
             sql += " AND DATE(eaten_at) BETWEEN ? AND ?";
             params.push(startDate, endDate);
         } else {
-            // Default to weekly (7 days) or handle 'weekly' explicitly
-            const interval = 7;
-            sql += " AND DATE(eaten_at) BETWEEN DATE_SUB(?, INTERVAL ? DAY) AND ?";
-            params.push(todayIST, interval, todayIST);
+            // Monday to Sunday logic
+            const today = new Date(todayIST);
+            const day = today.getDay(); // 0 (Sun) to 6 (Sat)
+            const diffToMonday = (day + 6) % 7;
+            const monday = new Date(today);
+            monday.setDate(today.getDate() - diffToMonday);
+            const sunday = new Date(monday);
+            sunday.setDate(monday.getDate() + 6);
+
+            const mondayStr = monday.toISOString().split('T')[0];
+            const sundayStr = sunday.toISOString().split('T')[0];
+
+            sql += " AND DATE(eaten_at) BETWEEN ? AND ?";
+            params.push(mondayStr, sundayStr);
         }
 
         sql += " GROUP BY date ORDER BY date ASC";
@@ -63,9 +73,20 @@ export async function GET(req: Request) {
             breakdownSql += " AND DATE(eaten_at) BETWEEN ? AND ?";
             breakdownParams.push(startDate, endDate);
         } else {
-            const interval = 7;
-            breakdownSql += " AND DATE(eaten_at) BETWEEN DATE_SUB(?, INTERVAL ? DAY) AND ?";
-            breakdownParams.push(todayIST, interval, todayIST);
+            // Monday to Sunday logic
+            const today = new Date(todayIST);
+            const day = today.getDay();
+            const diffToMonday = (day + 6) % 7;
+            const monday = new Date(today);
+            monday.setDate(today.getDate() - diffToMonday);
+            const sunday = new Date(monday);
+            sunday.setDate(monday.getDate() + 6);
+
+            const mondayStr = monday.toISOString().split('T')[0];
+            const sundayStr = sunday.toISOString().split('T')[0];
+
+            breakdownSql += " AND DATE(eaten_at) BETWEEN ? AND ?";
+            breakdownParams.push(mondayStr, sundayStr);
         }
         breakdownSql += " GROUP BY meal_type";
 

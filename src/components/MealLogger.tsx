@@ -124,222 +124,224 @@ export default function MealLogger({ onClose, onComplete, subtractionMealId, ini
             <motion.div
                 initial={{ scale: 0.9, y: 20 }}
                 animate={{ scale: 1, y: 0 }}
-                className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-[3rem] p-8 shadow-2xl relative overflow-hidden"
+                className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]"
             >
-                <button
-                    onClick={onClose}
-                    className="absolute top-6 right-6 p-3 bg-slate-100 dark:bg-white/10 rounded-2xl hover:bg-slate-200 dark:hover:bg-white/20 transition-all text-slate-500 z-10"
-                >
-                    <X size={18} />
-                </button>
+                <div className="p-8 pb-4 shrink-0">
+                    <button
+                        onClick={onClose}
+                        className="absolute top-6 right-6 p-3 bg-slate-100 dark:bg-white/10 rounded-2xl hover:bg-slate-200 dark:hover:bg-white/20 transition-all text-slate-500 z-10"
+                    >
+                        <X size={18} />
+                    </button>
 
-                <div className="mb-10">
                     <h3 className="text-xl font-black font-display text-slate-900 dark:text-white">
                         {subtractionMealId ? 'Subtract Leftovers' : 'Log Nutrition'}
                     </h3>
                 </div>
 
-                <div className="space-y-8">
-                    {preview ? (
-                        <div className="space-y-6">
-                            <div className="w-full aspect-[4/3] bg-slate-100 dark:bg-white/5 rounded-[2.5rem] overflow-hidden relative group border-4 border-slate-50 dark:border-white/5 shadow-xl">
-                                <img src={preview} className="w-full h-full object-cover" alt="Preview" />
-                                <AnimatePresence>
-                                    {isAnalyzing && (
-                                        <motion.div
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            className="absolute inset-0 bg-gold/80 dark:bg-gold/90 backdrop-blur-md flex flex-col items-center justify-center text-white dark:text-slate-950"
-                                        >
+                <div className="flex-1 overflow-y-auto px-8 custom-scrollbar">
+                    <div className="space-y-8 pb-8">
+                        {preview ? (
+                            <div className="space-y-6">
+                                <div className="w-full aspect-[4/3] bg-slate-100 dark:bg-white/5 rounded-[2.5rem] overflow-hidden relative group border-4 border-slate-50 dark:border-white/5 shadow-xl">
+                                    <img src={preview} className="w-full h-full object-cover" alt="Preview" />
+                                    <AnimatePresence>
+                                        {isAnalyzing && (
                                             <motion.div
-                                                animate={{ rotate: 360 }}
-                                                transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-                                                className="mb-6"
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                                className="absolute inset-0 bg-gold/80 dark:bg-gold/90 backdrop-blur-md flex flex-col items-center justify-center text-white dark:text-slate-950"
                                             >
-                                                <Sparkles size={64} />
-                                            </motion.div>
-                                            <p className="font-black text-xl font-display tracking-tight">GPT Analysis in Progress</p>
-                                            <p className="text-white/80 dark:text-slate-950/60 text-xs mt-2 uppercase tracking-widest font-black opacity-60">Wait for accuracy...</p>
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
-                            </div>
-
-                            {!isAnalyzing && (
-                                <>
-                                    <div className="space-y-3">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Meal Type</label>
-                                        <div className="grid grid-cols-4 gap-2">
-                                            {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map((type) => (
-                                                <button
-                                                    key={type}
-                                                    type="button"
-                                                    onClick={() => setMealType(type)}
-                                                    className={`py-3 px-1 rounded-xl border-2 text-[10px] font-black uppercase transition-all ${mealType === type ? 'border-blue-600 dark:border-gold bg-blue-600 dark:bg-gold text-white dark:text-slate-950 shadow-lg shadow-blue-600/20 dark:shadow-gold/20' : 'border-slate-100 dark:border-white/5 text-slate-400 dark:text-cream/40'}`}
+                                                <motion.div
+                                                    animate={{ rotate: 360 }}
+                                                    transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                                                    className="mb-6"
                                                 >
-                                                    {type}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
+                                                    <Sparkles size={64} />
+                                                </motion.div>
+                                                <p className="font-black text-xl font-display tracking-tight">GPT Analysis in Progress</p>
+                                                <p className="text-white/80 dark:text-slate-950/60 text-xs mt-2 uppercase tracking-widest font-black opacity-60">Wait for accuracy...</p>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
 
-                                    <div className="space-y-3">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Optional Insight</label>
-                                        <textarea
-                                            value={description}
-                                            onChange={(e) => setDescription(e.target.value)}
-                                            placeholder={subtractionMealId ? "What's left over?" : "Organic, large portion, extra spicy..."}
-                                            className="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-[1.5rem] border-2 border-transparent focus:border-blue-600 dark:focus:border-gold outline-none text-slate-900 dark:text-cream transition-all resize-none h-20 text-sm font-medium"
-                                        />
-                                    </div>
-
-                                    <div className="grid grid-cols-3 gap-3 hidden">
-                                        <div className="space-y-1.5 text-center">
-                                            <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Prot (g)</label>
-                                            <input
-                                                type="number"
-                                                value={protein}
-                                                onChange={(e) => setProtein(parseInt(e.target.value) || 0)}
-                                                className="w-full p-3 bg-slate-50 dark:bg-white/5 rounded-2xl border-2 border-transparent focus:border-emerald-500 outline-none text-center font-black text-sm dark:text-cream"
-                                            />
-                                        </div>
-                                        <div className="space-y-1.5 text-center">
-                                            <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Carb (g)</label>
-                                            <input
-                                                type="number"
-                                                value={carbs}
-                                                onChange={(e) => setCarbs(parseInt(e.target.value) || 0)}
-                                                className="w-full p-3 bg-slate-50 dark:bg-white/5 rounded-2xl border-2 border-transparent focus:border-amber-500 outline-none text-center font-black text-sm dark:text-cream"
-                                            />
-                                        </div>
-                                        <div className="space-y-1.5 text-center">
-                                            <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Fat (g)</label>
-                                            <input
-                                                type="number"
-                                                value={fats}
-                                                onChange={(e) => setFats(parseInt(e.target.value) || 0)}
-                                                className="w-full p-3 bg-slate-50 dark:bg-white/5 rounded-2xl border-2 border-transparent focus:border-rose-500 outline-none text-center font-black text-sm dark:text-cream"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {subtractionMealId && suggestions.length > 0 && (
+                                {!isAnalyzing && (
+                                    <>
                                         <div className="space-y-3">
-                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Related Food Suggestions</p>
-                                            <div className="flex flex-wrap gap-2">
-                                                {suggestions.map((s, i) => (
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Meal Type</label>
+                                            <div className="grid grid-cols-4 gap-2">
+                                                {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map((type) => (
                                                     <button
-                                                        key={i}
-                                                        onClick={() => handleQuickLog(s)}
-                                                        className="px-4 py-3 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 text-slate-400 dark:text-cream/40 hover:border-blue-600 dark:hover:border-gold transition-all text-left"
+                                                        key={type}
+                                                        type="button"
+                                                        onClick={() => setMealType(type)}
+                                                        className={`py-3 px-1 rounded-xl border-2 text-[10px] font-black uppercase transition-all ${mealType === type ? 'border-blue-600 dark:border-gold bg-blue-600 dark:bg-gold text-white dark:text-slate-950 shadow-lg shadow-blue-600/20 dark:shadow-gold/20' : 'border-slate-100 dark:border-white/5 text-slate-400 dark:text-cream/40'}`}
                                                     >
-                                                        <div className="flex flex-col items-start gap-1">
-                                                            <div className="flex items-center gap-1.5">
-                                                                <Sparkles size={10} className="text-blue-600 dark:text-gold" />
-                                                                <span className="text-[10px] font-bold text-slate-700 dark:text-cream">{s.food_name}</span>
-                                                            </div>
-                                                            <div className="flex gap-2 text-[8px] font-black uppercase opacity-60">
-                                                                <span>{s.calories} kcal</span>
-                                                                <span className="text-emerald-500">P: {s.protein || 0}g</span>
-                                                                <span className="text-amber-500">C: {s.carbs || 0}g</span>
-                                                                <span className="text-rose-500">F: {s.fats || 0}g</span>
-                                                            </div>
-                                                        </div>
+                                                        {type}
                                                     </button>
                                                 ))}
                                             </div>
                                         </div>
-                                    )}
-                                </>
-                            )}
-                        </div>
-                    ) : (
-                        <div className="space-y-4">
-                            <button
-                                onClick={() => cameraInputRef.current?.click()}
-                                className="w-full h-40 bg-slate-50 dark:bg-white/5 rounded-[2.5rem] border-4 border-dashed border-slate-200 dark:border-white/10 flex flex-col items-center justify-center text-slate-400 hover:border-blue-600 dark:hover:border-gold hover:bg-blue-50/30 dark:hover:bg-gold/10 transition-all group relative overflow-hidden"
-                            >
-                                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-br from-blue-600/10 dark:from-gold/10 to-transparent" />
-                                <div className="w-16 h-16 bg-white dark:bg-gold/10 rounded-2xl shadow-xl flex items-center justify-center text-blue-600 dark:text-gold mb-4 group-hover:scale-110 transition-all duration-500">
-                                    <Camera size={24} />
-                                </div>
-                                <p className="font-black text-slate-900 dark:text-cream text-sm font-display">{subtractionMealId ? 'Subtract Leftovers' : 'Capture Food'}</p>
-                                <p className="text-[10px] font-black uppercase tracking-widest mt-2 opacity-60 dark:text-cream/40">Powered by Gemini 2.5</p>
-                            </button>
 
-                            <button
-                                onClick={() => galleryInputRef.current?.click()}
-                                className="w-full py-4 bg-white dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-[2rem] flex items-center justify-center gap-3 text-slate-600 dark:text-slate-400 font-bold hover:bg-slate-50 transition-all text-sm"
-                            >
-                                <ImageIcon size={20} />
-                                Select from Gallery
-                            </button>
+                                        <div className="space-y-3">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Optional Insight</label>
+                                            <textarea
+                                                value={description}
+                                                onChange={(e) => setDescription(e.target.value)}
+                                                placeholder={subtractionMealId ? "What's left over?" : "Organic, large portion, extra spicy..."}
+                                                className="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-[1.5rem] border-2 border-transparent focus:border-blue-600 dark:focus:border-gold outline-none text-slate-900 dark:text-cream transition-all resize-none h-20 text-sm font-medium"
+                                            />
+                                        </div>
 
-                            {suggestions.length > 0 && (
-                                <div className="space-y-3">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Quick Log Suggestions</p>
-                                    <div className="flex flex-wrap gap-2">
-                                        {suggestions.map((s, i) => (
-                                            <button
-                                                key={i}
-                                                onClick={() => handleQuickLog(s)}
-                                                className="px-4 py-3 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 text-slate-600 dark:text-cream/60 hover:border-blue-600 dark:hover:border-gold transition-all text-left"
-                                            >
-                                                <div className="flex flex-col items-start gap-1">
-                                                    <div className="flex items-center gap-2">
-                                                        <Sparkles size={12} className="text-blue-600 dark:text-gold" />
-                                                        <span className="text-xs font-bold text-slate-900 dark:text-cream">{s.food_name}</span>
-                                                    </div>
-                                                    <div className="flex gap-2 text-[9px] font-black uppercase opacity-60">
-                                                        <span>{s.calories} kcal</span>
-                                                        <span className="text-emerald-500">P: {s.protein || 0}g</span>
-                                                        <span className="text-amber-500">C: {s.carbs || 0}g</span>
-                                                        <span className="text-rose-500">F: {s.fats || 0}g</span>
-                                                    </div>
+                                        <div className="grid grid-cols-3 gap-3 hidden">
+                                            <div className="space-y-1.5 text-center">
+                                                <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Prot (g)</label>
+                                                <input
+                                                    type="number"
+                                                    value={protein}
+                                                    onChange={(e) => setProtein(parseInt(e.target.value) || 0)}
+                                                    className="w-full p-3 bg-slate-50 dark:bg-white/5 rounded-2xl border-2 border-transparent focus:border-emerald-500 outline-none text-center font-black text-sm dark:text-cream"
+                                                />
+                                            </div>
+                                            <div className="space-y-1.5 text-center">
+                                                <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Carb (g)</label>
+                                                <input
+                                                    type="number"
+                                                    value={carbs}
+                                                    onChange={(e) => setCarbs(parseInt(e.target.value) || 0)}
+                                                    className="w-full p-3 bg-slate-50 dark:bg-white/5 rounded-2xl border-2 border-transparent focus:border-amber-500 outline-none text-center font-black text-sm dark:text-cream"
+                                                />
+                                            </div>
+                                            <div className="space-y-1.5 text-center">
+                                                <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Fat (g)</label>
+                                                <input
+                                                    type="number"
+                                                    value={fats}
+                                                    onChange={(e) => setFats(parseInt(e.target.value) || 0)}
+                                                    className="w-full p-3 bg-slate-50 dark:bg-white/5 rounded-2xl border-2 border-transparent focus:border-rose-500 outline-none text-center font-black text-sm dark:text-cream"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {!subtractionMealId && suggestions.length > 0 && (
+                                            <div className="space-y-3">
+                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Related Food Suggestions</p>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {suggestions.map((s, i) => (
+                                                        <button
+                                                            key={i}
+                                                            onClick={() => handleQuickLog(s)}
+                                                            className="px-4 py-3 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 text-slate-400 dark:text-cream/40 hover:border-blue-600 dark:hover:border-gold transition-all text-left"
+                                                        >
+                                                            <div className="flex flex-col items-start gap-1">
+                                                                <div className="flex items-center gap-1.5">
+                                                                    <Sparkles size={10} className="text-blue-600 dark:text-gold" />
+                                                                    <span className="text-[10px] font-bold text-slate-700 dark:text-cream">{s.food_name}</span>
+                                                                </div>
+                                                                <div className="flex gap-2 text-[8px] font-black uppercase opacity-60">
+                                                                    <span>{s.calories} kcal</span>
+                                                                    <span className="text-emerald-500">P: {s.protein || 0}g</span>
+                                                                    <span className="text-amber-500">C: {s.carbs || 0}g</span>
+                                                                    <span className="text-rose-500">F: {s.fats || 0}g</span>
+                                                                </div>
+                                                            </div>
+                                                        </button>
+                                                    ))}
                                                 </div>
-                                            </button>
-                                        ))}
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                <button
+                                    onClick={() => cameraInputRef.current?.click()}
+                                    className="w-full h-40 bg-slate-50 dark:bg-white/5 rounded-[2.5rem] border-4 border-dashed border-slate-200 dark:border-white/10 flex flex-col items-center justify-center text-slate-400 hover:border-blue-600 dark:hover:border-gold hover:bg-blue-50/30 dark:hover:bg-gold/10 transition-all group relative overflow-hidden"
+                                >
+                                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-br from-blue-600/10 dark:from-gold/10 to-transparent" />
+                                    <div className="w-16 h-16 bg-white dark:bg-gold/10 rounded-2xl shadow-xl flex items-center justify-center text-blue-600 dark:text-gold mb-4 group-hover:scale-110 transition-all duration-500">
+                                        <Camera size={24} />
                                     </div>
-                                </div>
-                            )}
-
-                            {/* Hidden Inputs */}
-                            <input
-                                type="file"
-                                ref={cameraInputRef}
-                                onChange={handleFileChange}
-                                accept="image/*"
-                                capture="environment"
-                                className="hidden"
-                            />
-                            <input
-                                type="file"
-                                ref={galleryInputRef}
-                                onChange={handleFileChange}
-                                accept="image/*"
-                                className="hidden"
-                            />
-                        </div>
-                    )}
-
-                    <div className="pt-4 flex gap-3">
-                        {preview && !isAnalyzing ? (
-                            <>
-                                <button
-                                    onClick={() => { setImage(null); setPreview(null); setDescription(""); }}
-                                    className="flex-1 py-4 bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white font-black rounded-[2rem] hover:bg-slate-200 transition-all text-xs"
-                                >
-                                    Cancel
+                                    <p className="font-black text-slate-900 dark:text-cream text-sm font-display">{subtractionMealId ? 'Subtract Leftovers' : 'Capture Food'}</p>
+                                    <p className="text-[10px] font-black uppercase tracking-widest mt-2 opacity-60 dark:text-cream/40">Powered by Gemini 2.5</p>
                                 </button>
+
                                 <button
-                                    onClick={handleUpload}
-                                    className={`flex-[2] py-4 ${subtractionMealId ? 'bg-orange-600 dark:bg-gold' : 'bg-blue-600 dark:bg-gold'} text-white dark:text-slate-950 font-black rounded-[2rem] shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 group text-xs shadow-blue-600/20 dark:shadow-gold/20`}
+                                    onClick={() => galleryInputRef.current?.click()}
+                                    className="w-full py-4 bg-white dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-[2rem] flex items-center justify-center gap-3 text-slate-600 dark:text-slate-400 font-bold hover:bg-slate-50 transition-all text-sm"
                                 >
-                                    {subtractionMealId ? 'Subtract' : 'Log Meal'} <Send size={16} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                                    <ImageIcon size={20} />
+                                    Select from Gallery
                                 </button>
-                            </>
-                        ) : null}
+
+                                {!subtractionMealId && suggestions.length > 0 && (
+                                    <div className="space-y-3">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Quick Log Suggestions</p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {suggestions.map((s, i) => (
+                                                <button
+                                                    key={i}
+                                                    onClick={() => handleQuickLog(s)}
+                                                    className="px-4 py-3 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 text-slate-600 dark:text-cream/60 hover:border-blue-600 dark:hover:border-gold transition-all text-left"
+                                                >
+                                                    <div className="flex flex-col items-start gap-1">
+                                                        <div className="flex items-center gap-2">
+                                                            <Sparkles size={12} className="text-blue-600 dark:text-gold" />
+                                                            <span className="text-xs font-bold text-slate-900 dark:text-cream">{s.food_name}</span>
+                                                        </div>
+                                                        <div className="flex gap-2 text-[9px] font-black uppercase opacity-60">
+                                                            <span>{s.calories} kcal</span>
+                                                            <span className="text-emerald-500">P: {s.protein || 0}g</span>
+                                                            <span className="text-amber-500">C: {s.carbs || 0}g</span>
+                                                            <span className="text-rose-500">F: {s.fats || 0}g</span>
+                                                        </div>
+                                                    </div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Hidden Inputs */}
+                                <input
+                                    type="file"
+                                    ref={cameraInputRef}
+                                    onChange={handleFileChange}
+                                    accept="image/*"
+                                    capture="environment"
+                                    className="hidden"
+                                />
+                                <input
+                                    type="file"
+                                    ref={galleryInputRef}
+                                    onChange={handleFileChange}
+                                    accept="image/*"
+                                    className="hidden"
+                                />
+                            </div>
+                        )}
                     </div>
+                </div>
+
+                <div className="p-8 pt-4 shrink-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-100 dark:border-white/5">
+                    {preview && !isAnalyzing ? (
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => { setImage(null); setPreview(null); setDescription(""); }}
+                                className="flex-1 py-4 bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white font-black rounded-[2rem] hover:bg-slate-200 dark:hover:bg-white/20 transition-all text-xs"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleUpload}
+                                className={`flex-[2] py-4 ${subtractionMealId ? 'bg-orange-600 dark:bg-gold text-white dark:text-slate-950' : 'bg-blue-600 dark:bg-gold text-white dark:text-slate-950'} font-black rounded-[2rem] shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 group text-xs shadow-blue-600/20 dark:shadow-gold/20`}
+                            >
+                                {subtractionMealId ? 'Subtract' : 'Log Meal'} <Send size={16} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                            </button>
+                        </div>
+                    ) : null}
                 </div>
             </motion.div>
         </motion.div>

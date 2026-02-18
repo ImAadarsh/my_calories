@@ -12,6 +12,7 @@ interface DailyTabProps {
     lastReport: any;
     isDinnerTime: boolean;
     onAnalyzeDay: () => void;
+    onViewReport: (report?: any) => void;
     onMealClick: (meal: any) => void;
     summaryScale: any;
     summaryOpacity: any;
@@ -27,6 +28,7 @@ export function DailyTab({
     lastReport,
     isDinnerTime,
     onAnalyzeDay,
+    onViewReport,
     onMealClick,
     summaryScale,
     summaryOpacity,
@@ -101,7 +103,7 @@ export function DailyTab({
                             <div className="pt-3 mt-1">
                                 {dailyReport ? (
                                     <button
-                                        onClick={onAnalyzeDay}
+                                        onClick={() => onViewReport()}
                                         className="w-full py-3.5 bg-emerald-500/10 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 group"
                                     >
                                         <Sparkles size={14} className="text-emerald-500" />
@@ -123,11 +125,11 @@ export function DailyTab({
                                     </button>
                                 ) : lastReport ? (
                                     <button
-                                        onClick={onAnalyzeDay}
+                                        onClick={() => onViewReport(lastReport)}
                                         className="w-full py-3 bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-cream/40 border border-slate-200 dark:border-white/10 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 group"
                                     >
                                         <History size={12} className="opacity-60" />
-                                        View Last Report
+                                        View Yesterday's Report
                                     </button>
                                 ) : null}
                             </div>

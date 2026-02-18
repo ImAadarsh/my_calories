@@ -41,6 +41,7 @@ export default function Dashboard() {
   const [isAnalyzingDay, setIsAnalyzingDay] = useState(false);
   const [dailyReport, setDailyReport] = useState<any>(null);
   const [lastReport, setLastReport] = useState<any>(null);
+  const [activeReportForModal, setActiveReportForModal] = useState<any>(null);
   const [showAnalysisModal, setShowAnalysisModal] = useState(false);
   const [selectedFeeling, setSelectedFeeling] = useState<string | null>(null);
   const [isSavingReport, setIsSavingReport] = useState(false);
@@ -119,7 +120,7 @@ export default function Dashboard() {
       const res = await fetch('/api/reports');
       if (res.ok) {
         const data = await res.json();
-        if (data) {
+        if (data && data.is_ai_report === 1) {
           setDailyReport(JSON.parse(data.analysis_content));
           setSelectedFeeling(data.feeling);
         } else {
@@ -144,11 +145,10 @@ export default function Dashboard() {
 
 
   const handleAnalyzeDay = async () => {
-    if (meals.length === 0) return;
+    if (meals.length === 0 && !dailyReport) return;
+    setActiveReportForModal(dailyReport);
     setIsAnalyzingDay(true);
     setShowAnalysisModal(true);
-    // Analysis is now triggered on the backend during the save flow or pre-view if needed
-    // But user wants "In that I want the Nurtion and all the info" so we can generate it now if not exists
   };
 
   const saveDailyReport = async (feeling: string) => {
@@ -161,7 +161,10 @@ export default function Dashboard() {
       });
       if (res.ok) {
         const data = await res.json();
-        setDailyReport(data.analysis);
+        const updatedReport = data.analysis;
+        setDailyReport(updatedReport);
+        setActiveReportForModal(updatedReport);
+        fetchStats();
         setSelectedFeeling(feeling);
       }
     } catch (e) {
@@ -591,6 +594,10 @@ export default function Dashboard() {
               meals={meals}
               onMealClick={setSelectedMeal}
               onAnalyzeDay={handleAnalyzeDay}
+              onViewReport={(report) => {
+                setActiveReportForModal(report || dailyReport);
+                setShowAnalysisModal(true);
+              }}
               dailyReport={dailyReport}
               lastReport={lastReport}
               summaryScale={summaryScale}
@@ -629,7 +636,7 @@ export default function Dashboard() {
               historicalMeals={historicalMeals}
               onMealClick={setSelectedMeal}
               onViewFullReport={(report) => {
-                setDailyReport(report);
+                setActiveReportForModal(report);
                 setShowAnalysisModal(true);
               }}
             />
@@ -682,8 +689,13 @@ export default function Dashboard() {
         {showAnalysisModal && (
           <AnalysisModal
             isOpen={showAnalysisModal}
-            onClose={() => !isSavingReport && setShowAnalysisModal(false)}
-            dailyReport={dailyReport}
+            onClose={() => {
+              if (!isSavingReport) {
+                setShowAnalysisModal(false);
+                setActiveReportForModal(null);
+              }
+            }}
+            dailyReport={activeReportForModal}
             isSavingReport={isSavingReport}
             onSaveReport={saveDailyReport}
             selectedFeeling={selectedFeeling}

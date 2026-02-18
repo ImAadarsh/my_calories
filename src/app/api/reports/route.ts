@@ -23,7 +23,7 @@ export async function GET(req: Request) {
 
         if (latest === 'true') {
             const latestReport = await query(
-                "SELECT * FROM daily_reports WHERE user_id = ? ORDER BY report_date DESC LIMIT 1",
+                "SELECT * FROM daily_reports WHERE user_id = ? AND is_ai_report = 1 ORDER BY report_date DESC LIMIT 1",
                 [session.user.id]
             ) as any[];
             return NextResponse.json(latestReport[0] || null);
