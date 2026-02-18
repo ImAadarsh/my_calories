@@ -16,9 +16,18 @@ export async function GET(req: Request) {
     try {
         const { searchParams } = new URL(req.url);
         const requestedDate = searchParams.get('date');
+        const latest = searchParams.get('latest'); // 'true'
         const range = searchParams.get('range'); // 'daily', 'weekly', 'custom'
         const startDate = searchParams.get('startDate');
         const endDate = searchParams.get('endDate');
+
+        if (latest === 'true') {
+            const latestReport = await query(
+                "SELECT * FROM daily_reports WHERE user_id = ? ORDER BY report_date DESC LIMIT 1",
+                [session.user.id]
+            ) as any[];
+            return NextResponse.json(latestReport[0] || null);
+        }
 
         if (range) {
             let dateFilter = "";

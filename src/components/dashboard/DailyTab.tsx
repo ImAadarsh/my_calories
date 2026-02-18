@@ -9,6 +9,7 @@ interface DailyTabProps {
     progress: number;
     meals: any[];
     dailyReport: any;
+    lastReport: any;
     isDinnerTime: boolean;
     onAnalyzeDay: () => void;
     onMealClick: (meal: any) => void;
@@ -23,6 +24,7 @@ export function DailyTab({
     progress,
     meals,
     dailyReport,
+    lastReport,
     isDinnerTime,
     onAnalyzeDay,
     onMealClick,
@@ -94,16 +96,40 @@ export function DailyTab({
                             </div>
                         </div>
 
-                        {(isDinnerTime || dailyReport) && (
+                        {/* Daily Report Button - Refined Logic */}
+                        {(dailyReport || isDinnerTime || lastReport) && (
                             <div className="pt-3 mt-1">
-                                <button
-                                    onClick={onAnalyzeDay}
-                                    disabled={meals.length === 0}
-                                    className={`w-full py-3 ${dailyReport ? 'bg-slate-100 dark:bg-white/5 text-slate-500' : 'bg-blue-600 dark:bg-gold text-white dark:text-slate-950 shadow-xl shadow-blue-600/20 dark:shadow-gold/20'} rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 group disabled:opacity-50`}
-                                >
-                                    <Sparkles size={14} className={dailyReport ? "" : "text-blue-200 dark:text-slate-900 group-hover:rotate-12 transition-transform"} />
-                                    {dailyReport ? 'View Your Daily Report' : 'Generate Daily Report'}
-                                </button>
+                                {dailyReport ? (
+                                    <button
+                                        onClick={onAnalyzeDay}
+                                        className="w-full py-3.5 bg-emerald-500/10 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 group"
+                                    >
+                                        <Sparkles size={14} className="text-emerald-500" />
+                                        View Today's Report
+                                    </button>
+                                ) : isDinnerTime ? (
+                                    <button
+                                        onClick={onAnalyzeDay}
+                                        disabled={meals.length === 0}
+                                        className="w-full py-4 bg-blue-600 dark:bg-gold text-white dark:text-slate-950 shadow-xl shadow-blue-600/20 dark:shadow-gold/20 rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 group disabled:opacity-50 relative overflow-hidden"
+                                    >
+                                        <motion.div
+                                            animate={{ x: ['-100%', '200%'] }}
+                                            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12"
+                                        />
+                                        <Sparkles size={14} className="text-blue-200 dark:text-slate-900 group-hover:rotate-12 transition-transform" />
+                                        Generate Daily Report
+                                    </button>
+                                ) : lastReport ? (
+                                    <button
+                                        onClick={onAnalyzeDay}
+                                        className="w-full py-3 bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-cream/40 border border-slate-200 dark:border-white/10 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 group"
+                                    >
+                                        <History size={12} className="opacity-60" />
+                                        View Last Report
+                                    </button>
+                                ) : null}
                             </div>
                         )}
                     </div>

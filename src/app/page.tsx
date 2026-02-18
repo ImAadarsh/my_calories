@@ -40,6 +40,7 @@ export default function Dashboard() {
   const [editedProfile, setEditedProfile] = useState<any>(null);
   const [isAnalyzingDay, setIsAnalyzingDay] = useState(false);
   const [dailyReport, setDailyReport] = useState<any>(null);
+  const [lastReport, setLastReport] = useState<any>(null);
   const [showAnalysisModal, setShowAnalysisModal] = useState(false);
   const [selectedFeeling, setSelectedFeeling] = useState<string | null>(null);
   const [isSavingReport, setIsSavingReport] = useState(false);
@@ -124,6 +125,15 @@ export default function Dashboard() {
         } else {
           setDailyReport(null);
           setSelectedFeeling(null);
+
+          // Fallback to fetch latest report for "View Last Report" button
+          const latestRes = await fetch('/api/reports?latest=true');
+          if (latestRes.ok) {
+            const latestData = await latestRes.json();
+            if (latestData) {
+              setLastReport(JSON.parse(latestData.analysis_content));
+            }
+          }
         }
       }
     } catch (e) {
@@ -582,6 +592,7 @@ export default function Dashboard() {
               onMealClick={setSelectedMeal}
               onAnalyzeDay={handleAnalyzeDay}
               dailyReport={dailyReport}
+              lastReport={lastReport}
               summaryScale={summaryScale}
               summaryOpacity={summaryOpacity}
               summaryY={summaryY}
