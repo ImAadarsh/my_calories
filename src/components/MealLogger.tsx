@@ -72,6 +72,50 @@ export default function MealLogger({ onClose, onComplete, subtractionMealId, ini
         }
     };
 
+    const compressImage = (file: File): Promise<Blob> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target?.result as string;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const MAX_SIZE = 1200;
+
+                    if (width > height) {
+                        if (width > MAX_SIZE) {
+                            height *= MAX_SIZE / width;
+                            width = MAX_SIZE;
+                        }
+                    } else {
+                        if (height > MAX_SIZE) {
+                            width *= MAX_SIZE / height;
+                            height = MAX_SIZE;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx?.drawImage(img, 0, 0, width, height);
+                    canvas.toBlob(
+                        (blob) => {
+                            if (blob) resolve(blob);
+                            else reject(new Error('Canvas to Blob failed'));
+                        },
+                        'image/jpeg',
+                        0.7
+                    );
+                };
+                img.onerror = reject;
+            };
+            reader.onerror = reject;
+        });
+    };
+
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
@@ -84,20 +128,21 @@ export default function MealLogger({ onClose, onComplete, subtractionMealId, ini
         if (!image) return;
         setIsAnalyzing(true);
 
-        const formData = new FormData();
-        formData.append('image', image);
-        if (description) {
-            formData.append('userDescription', description);
-        }
-        formData.append('mealType', mealType);
-        if (subtractionMealId) {
-            formData.append('subtractionMealId', subtractionMealId.toString());
-        }
-        formData.append('protein', protein.toString());
-        formData.append('carbs', carbs.toString());
-        formData.append('fats', fats.toString());
-
         try {
+            const compressedBlob = await compressImage(image);
+            const formData = new FormData();
+            formData.append('image', compressedBlob, 'meal.jpg');
+            if (description) {
+                formData.append('userDescription', description);
+            }
+            formData.append('mealType', mealType);
+            if (subtractionMealId) {
+                formData.append('subtractionMealId', subtractionMealId.toString());
+            }
+            formData.append('protein', protein.toString());
+            formData.append('carbs', carbs.toString());
+            formData.append('fats', fats.toString());
+
             const res = await fetch('/api/meals', {
                 method: 'POST',
                 body: formData,
