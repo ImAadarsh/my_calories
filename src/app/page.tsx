@@ -121,6 +121,9 @@ export default function Dashboard() {
         if (data) {
           setDailyReport(JSON.parse(data.analysis_content));
           setSelectedFeeling(data.feeling);
+        } else {
+          setDailyReport(null);
+          setSelectedFeeling(null);
         }
       }
     } catch (e) {

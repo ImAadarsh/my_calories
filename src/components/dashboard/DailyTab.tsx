@@ -102,7 +102,7 @@ export function DailyTab({
                                     className={`w-full py-3 ${dailyReport ? 'bg-slate-100 dark:bg-white/5 text-slate-500' : 'bg-blue-600 dark:bg-gold text-white dark:text-slate-950 shadow-xl shadow-blue-600/20 dark:shadow-gold/20'} rounded-2xl font-black text-xs uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 group disabled:opacity-50`}
                                 >
                                     <Sparkles size={14} className={dailyReport ? "" : "text-blue-200 dark:text-slate-900 group-hover:rotate-12 transition-transform"} />
-                                    {dailyReport ? 'View Your Daily Report' : 'Analyze My Day'}
+                                    {dailyReport ? 'View Your Daily Report' : 'Generate Daily Report'}
                                 </button>
                             </div>
                         )}

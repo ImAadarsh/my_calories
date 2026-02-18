@@ -231,9 +231,20 @@ export default function MealLogger({ onClose, onComplete, subtractionMealId, ini
                                                     <button
                                                         key={i}
                                                         onClick={() => handleQuickLog(s)}
-                                                        className="px-3 py-2 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 text-[10px] font-bold text-slate-400 dark:text-cream/40 hover:border-blue-600 dark:hover:border-gold hover:text-blue-600 dark:hover:text-gold transition-all flex items-center gap-1"
+                                                        className="px-4 py-3 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 text-slate-400 dark:text-cream/40 hover:border-blue-600 dark:hover:border-gold transition-all text-left"
                                                     >
-                                                        <Sparkles size={10} /> {s.food_name}
+                                                        <div className="flex flex-col items-start gap-1">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <Sparkles size={10} className="text-blue-600 dark:text-gold" />
+                                                                <span className="text-[10px] font-bold text-slate-700 dark:text-cream">{s.food_name}</span>
+                                                            </div>
+                                                            <div className="flex gap-2 text-[8px] font-black uppercase opacity-60">
+                                                                <span>{s.calories} kcal</span>
+                                                                <span className="text-emerald-500">P: {s.protein || 0}g</span>
+                                                                <span className="text-amber-500">C: {s.carbs || 0}g</span>
+                                                                <span className="text-rose-500">F: {s.fats || 0}g</span>
+                                                            </div>
+                                                        </div>
                                                     </button>
                                                 ))}
                                             </div>
@@ -272,9 +283,20 @@ export default function MealLogger({ onClose, onComplete, subtractionMealId, ini
                                             <button
                                                 key={i}
                                                 onClick={() => handleQuickLog(s)}
-                                                className="px-4 py-3 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 text-xs font-bold text-slate-600 dark:text-cream/60 hover:border-blue-600 dark:hover:border-gold hover:text-blue-600 dark:hover:text-gold transition-all flex items-center gap-2"
+                                                className="px-4 py-3 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 text-slate-600 dark:text-cream/60 hover:border-blue-600 dark:hover:border-gold transition-all text-left"
                                             >
-                                                <Sparkles size={12} /> {s.food_name}
+                                                <div className="flex flex-col items-start gap-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <Sparkles size={12} className="text-blue-600 dark:text-gold" />
+                                                        <span className="text-xs font-bold text-slate-900 dark:text-cream">{s.food_name}</span>
+                                                    </div>
+                                                    <div className="flex gap-2 text-[9px] font-black uppercase opacity-60">
+                                                        <span>{s.calories} kcal</span>
+                                                        <span className="text-emerald-500">P: {s.protein || 0}g</span>
+                                                        <span className="text-amber-500">C: {s.carbs || 0}g</span>
+                                                        <span className="text-rose-500">F: {s.fats || 0}g</span>
+                                                    </div>
+                                                </div>
                                             </button>
                                         ))}
                                     </div>

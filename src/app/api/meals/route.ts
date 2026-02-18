@@ -112,7 +112,7 @@ export async function GET(req: Request) {
 
         if (frequent) {
             let sql = `
-                SELECT food_name, description, calories, COUNT(*) as frequency 
+                SELECT food_name, description, calories, protein, carbs, fats, COUNT(*) as frequency 
                 FROM (
                     SELECT * FROM meals 
                     WHERE user_id = ? 
@@ -127,7 +127,7 @@ export async function GET(req: Request) {
                 params.push(mealTypeParam);
             }
 
-            sql += " GROUP BY food_name, description, calories ORDER BY frequency DESC LIMIT 3";
+            sql += " GROUP BY food_name, description, calories, protein, carbs, fats ORDER BY frequency DESC LIMIT 3";
 
             const frequentMeals = await query(sql, params);
             return NextResponse.json(frequentMeals);
